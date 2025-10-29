@@ -1,0 +1,501 @@
+{
+	"info": {
+		"name": "Auth System - JWT & Role-Based Access",
+		"description": "Complete API testing for Spring Boot Authentication System with JWT and MongoDB",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"auth": {
+		"type": "bearer",
+		"bearer": [
+			{
+				"key": "token",
+				"value": "{{jwt_token}}",
+				"type": "string"
+			}
+		]
+	},
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:8081",
+			"type": "string"
+		},
+		{
+			"key": "jwt_token",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_email",
+			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "user_role",
+			"value": "",
+			"type": "string"
+		}
+	],
+	"item": [
+		{
+			"name": "1. Health Checks",
+			"item": [
+				{
+					"name": "Check MongoDB Connection",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/health/mongodb",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health", "mongodb"]
+						},
+						"description": "Test MongoDB connection and see database info"
+					},
+					"response": []
+				},
+				{
+					"name": "Get All Users (No Auth)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/health/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "health", "users"]
+						},
+						"description": "List all registered users from MongoDB"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints to verify MongoDB connection and list users"
+		},
+		{
+			"name": "2. Authentication",
+			"item": [
+				{
+					"name": "Register Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User registered successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@test.com\",\n    \"password\": \"Student123\",\n    \"fullName\": \"John Student\",\n    \"role\": \"STUDENT\",\n    \"phone\": \"1234567890\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new student user"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Instructor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User registered successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"instructor@test.com\",\n    \"password\": \"Instructor123\",\n    \"fullName\": \"Jane Instructor\",\n    \"role\": \"INSTRUCTOR\",\n    \"phone\": \"0987654321\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new instructor user"
+					},
+					"response": []
+				},
+				{
+					"name": "Register Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"User registered successfully\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@test.com\",\n    \"password\": \"Admin123\",\n    \"fullName\": \"Admin User\",\n    \"role\": \"ADMIN\",\n    \"phone\": \"5555555555\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/register",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "register"]
+						},
+						"description": "Register a new admin user"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Student",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"    pm.collectionVariables.set(\"user_email\", jsonData.email);",
+									"    pm.collectionVariables.set(\"user_role\", jsonData.role);",
+									"    console.log(\"JWT Token saved: \" + jsonData.token);",
+									"    console.log(\"Role: \" + jsonData.role);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"student@test.com\",\n    \"password\": \"Student123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login as student and auto-save JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Instructor",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"    pm.collectionVariables.set(\"user_email\", jsonData.email);",
+									"    pm.collectionVariables.set(\"user_role\", jsonData.role);",
+									"    console.log(\"JWT Token saved: \" + jsonData.token);",
+									"    console.log(\"Role: \" + jsonData.role);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"instructor@test.com\",\n    \"password\": \"Instructor123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login as instructor and auto-save JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Login Admin",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Login successful\", function () {",
+									"    pm.response.to.have.status(200);",
+									"    var jsonData = pm.response.json();",
+									"    pm.collectionVariables.set(\"jwt_token\", jsonData.token);",
+									"    pm.collectionVariables.set(\"user_email\", jsonData.email);",
+									"    pm.collectionVariables.set(\"user_role\", jsonData.role);",
+									"    console.log(\"JWT Token saved: \" + jsonData.token);",
+									"    console.log(\"Role: \" + jsonData.role);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"email\": \"admin@test.com\",\n    \"password\": \"Admin123\"\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/api/auth/login",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "login"]
+						},
+						"description": "Login as admin and auto-save JWT token"
+					},
+					"response": []
+				},
+				{
+					"name": "Validate Token",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/auth/validate",
+							"host": ["{{base_url}}"],
+							"path": ["api", "auth", "validate"]
+						},
+						"description": "Validate JWT token and return user role"
+					},
+					"response": []
+				}
+			],
+			"description": "User registration and login endpoints"
+		},
+		{
+			"name": "3. Student Endpoints",
+			"item": [
+				{
+					"name": "Student Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/student/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "student", "dashboard"]
+						},
+						"description": "Access student dashboard (requires STUDENT role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Student Courses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/student/courses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "student", "courses"]
+						},
+						"description": "Get student's enrolled courses"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints accessible only by STUDENT role (requires JWT)"
+		},
+		{
+			"name": "4. Instructor Endpoints",
+			"item": [
+				{
+					"name": "Instructor Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/instructor/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "instructor", "dashboard"]
+						},
+						"description": "Access instructor dashboard (requires INSTRUCTOR role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Instructor Courses",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/instructor/courses",
+							"host": ["{{base_url}}"],
+							"path": ["api", "instructor", "courses"]
+						},
+						"description": "Get instructor's teaching courses"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints accessible only by INSTRUCTOR role (requires JWT)"
+		},
+		{
+			"name": "5. Admin Endpoints",
+			"item": [
+				{
+					"name": "Admin Dashboard",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/dashboard",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "dashboard"]
+						},
+						"description": "Access admin dashboard (requires ADMIN role)"
+					},
+					"response": []
+				},
+				{
+					"name": "Admin Get All Users",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt_token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/api/admin/users",
+							"host": ["{{base_url}}"],
+							"path": ["api", "admin", "users"]
+						},
+						"description": "Get user statistics (requires ADMIN role)"
+					},
+					"response": []
+				}
+			],
+			"description": "Endpoints accessible only by ADMIN role (requires JWT)"
+		}
+	]
+}
