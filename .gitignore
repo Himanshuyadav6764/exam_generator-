@@ -1,35 +1,35 @@
-# Backend
+# Backend Java
 backend/target/
-backend/.mvn/
-backend/mvnw
-backend/mvnw.cmd
-*.class
-*.jar
-*.war
-*.ear
-*.log
+backend/.idea/
+backend/*.iml
+backend/.classpath
+backend/.project
+backend/.settings/
 
-# Frontend
+# Frontend Angular
 frontend/node_modules/
-frontend/dist/
 frontend/.angular/
-frontend/.vscode/
-*.log
+frontend/dist/
+frontend/.cache/
+frontend/*.log
+
+# Tools
+tools/
 
 # IDE
-.idea/
 .vscode/
-*.iml
-*.iws
-*.ipr
+.idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Tools (portable Java and Maven)
-tools/
+# Logs
+*.log
 
 # Environment
 .env
-*.env
+.env.local
