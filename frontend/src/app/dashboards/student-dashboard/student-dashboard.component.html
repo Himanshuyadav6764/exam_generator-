@@ -1,0 +1,117 @@
+<div class="dashboard-container">
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🎓 Student Portal</h2>
+    </div>
+    <div class="nav-user">
+      <span class="user-name">{{ fullName }}</span>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-content">
+    <div class="welcome-section">
+      <h1>Welcome, {{ fullName }}! 👋</h1>
+      <p>Your Learning Dashboard</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-info">
+          <h3>4</h3>
+          <p>Enrolled Courses</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">✅</div>
+        <div class="stat-info">
+          <h3>12</h3>
+          <p>Completed Lessons</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">⏱️</div>
+        <div class="stat-info">
+          <h3>24h</h3>
+          <p>Learning Time</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">🏆</div>
+        <div class="stat-info">
+          <h3>85%</h3>
+          <p>Average Score</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">📖</div>
+        <h3>My Courses</h3>
+        <p>Access your enrolled courses and continue learning</p>
+        <button class="feature-btn">View Courses</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📝</div>
+        <h3>Assignments</h3>
+        <p>View and submit your assignments</p>
+        <button class="feature-btn">View Assignments</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Progress</h3>
+        <p>Track your learning progress and achievements</p>
+        <button class="feature-btn">View Progress</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🎯</div>
+        <h3>Grades</h3>
+        <p>Check your grades and performance</p>
+        <button class="feature-btn">View Grades</button>
+      </div>
+    </div>
+
+    <div class="recent-courses">
+      <h2>Recent Courses</h2>
+      <div class="courses-list">
+        <div class="course-item">
+          <div class="course-header">
+            <h4>Java Programming</h4>
+            <span class="progress-badge">60% Complete</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 60%"></div>
+          </div>
+        </div>
+
+        <div class="course-item">
+          <div class="course-header">
+            <h4>Spring Boot Masterclass</h4>
+            <span class="progress-badge">30% Complete</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 30%"></div>
+          </div>
+        </div>
+
+        <div class="course-item">
+          <div class="course-header">
+            <h4>Angular Development</h4>
+            <span class="progress-badge">45% Complete</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: 45%"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

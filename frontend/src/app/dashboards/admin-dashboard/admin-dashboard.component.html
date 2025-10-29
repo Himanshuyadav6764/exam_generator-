@@ -1,0 +1,133 @@
+<div class="dashboard-container">
+  <nav class="navbar">
+    <div class="nav-brand">
+      <h2>🛠️ Admin Portal</h2>
+    </div>
+    <div class="nav-user">
+      <span class="user-name">{{ fullName }}</span>
+      <button class="logout-btn" (click)="logout()">Logout</button>
+    </div>
+  </nav>
+
+  <div class="dashboard-content">
+    <div class="welcome-section">
+      <h1>Welcome, {{ fullName }}! 🛡️</h1>
+      <p>System Administration Dashboard</p>
+    </div>
+
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-icon">👥</div>
+        <div class="stat-info">
+          <h3>1,245</h3>
+          <p>Total Users</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">👨‍🎓</div>
+        <div class="stat-info">
+          <h3>980</h3>
+          <p>Students</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">👨‍🏫</div>
+        <div class="stat-info">
+          <h3>245</h3>
+          <p>Instructors</p>
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-icon">📚</div>
+        <div class="stat-info">
+          <h3>156</h3>
+          <p>Total Courses</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon">👥</div>
+        <h3>User Management</h3>
+        <p>Manage all users, roles, and permissions</p>
+        <button class="feature-btn">Manage Users</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📚</div>
+        <h3>Course Management</h3>
+        <p>Approve and manage all courses</p>
+        <button class="feature-btn">Manage Courses</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">⚙️</div>
+        <h3>System Settings</h3>
+        <p>Configure platform settings and preferences</p>
+        <button class="feature-btn">Settings</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">📊</div>
+        <h3>Analytics & Reports</h3>
+        <p>View detailed platform analytics</p>
+        <button class="feature-btn">View Reports</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">✅</div>
+        <h3>Course Approval</h3>
+        <p>Review and approve pending courses</p>
+        <button class="feature-btn">Review Courses</button>
+      </div>
+
+      <div class="feature-card">
+        <div class="feature-icon">🔔</div>
+        <h3>Notifications</h3>
+        <p>Send announcements and notifications</p>
+        <button class="feature-btn">Send Notification</button>
+      </div>
+    </div>
+
+    <div class="recent-activity">
+      <h2>Recent System Activity</h2>
+      <div class="activity-list">
+        <div class="activity-item">
+          <div class="activity-icon">👤</div>
+          <div class="activity-info">
+            <h4>New User Registration</h4>
+            <p>John Doe registered as a student • 2 hours ago</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-icon">📚</div>
+          <div class="activity-info">
+            <h4>Course Published</h4>
+            <p>Advanced Machine Learning course published • 5 hours ago</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-icon">⚠️</div>
+          <div class="activity-info">
+            <h4>Course Pending Approval</h4>
+            <p>React Native Development awaiting approval • 1 day ago</p>
+          </div>
+        </div>
+
+        <div class="activity-item">
+          <div class="activity-icon">✅</div>
+          <div class="activity-info">
+            <h4>System Update</h4>
+            <p>Platform updated to version 2.5.0 • 2 days ago</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
