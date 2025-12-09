@@ -1,0 +1,140 @@
+<div class="courses-container">
+    <!-- Header -->
+    <header class="courses-header">
+        <div class="header-content">
+            <button class="btn-back" (click)="goToDashboard()">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <div class="header-info">
+                <h1><i class="fas fa-book-open"></i> My Courses</h1>
+                <p>Explore and continue your learning journey</p>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">{{ userInitials }}</div>
+                <span>{{ fullName }}</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-state">
+        <div class="spinner"></div>
+        <p>Loading courses...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <p>{{ error }}</p>
+        <button class="btn-retry" (click)="loadPublishedCourses()">
+            <i class="fas fa-redo"></i> Retry
+        </button>
+    </div>
+
+    <!-- Courses Grid -->
+    <div *ngIf="!loading && !error" class="courses-content">
+        <!-- Search Bar -->
+        <div class="search-section">
+            <div class="search-container">
+                <i class="fas fa-search search-icon"></i>
+                <input 
+                    type="text" 
+                    class="search-input" 
+                    [(ngModel)]="searchQuery"
+                    (input)="searchCourses()"
+                    placeholder="Search courses by title, instructor, subject, or difficulty...">
+                <button *ngIf="searchQuery" class="clear-btn" (click)="clearSearch()">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="search-results-info" *ngIf="searchQuery">
+                <span>Found {{ filteredCourses.length }} course(s)</span>
+            </div>
+        </div>
+
+        <div class="courses-stats">
+            <div class="stat-card">
+                <i class="fas fa-graduation-cap"></i>
+                <div class="stat-info">
+                    <span class="stat-value">{{ filteredCourses.length }}</span>
+                    <span class="stat-label">{{ searchQuery ? 'Search Results' : 'Available Courses' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="filteredCourses.length === 0" class="empty-state">
+            <i class="fas fa-inbox"></i>
+            <h2>{{ searchQuery ? 'No Courses Found' : 'No Courses Available' }}</h2>
+            <p>{{ searchQuery ? 'Try adjusting your search terms' : 'Check back later for new courses from your instructors' }}</p>
+            <button *ngIf="searchQuery" class="btn-retry" (click)="clearSearch()">
+                <i class="fas fa-redo"></i> Clear Search
+            </button>
+        </div>
+
+        <!-- Courses Grid -->
+        <div *ngIf="filteredCourses.length > 0" class="courses-grid">
+            <div *ngFor="let course of filteredCourses" class="course-card">
+                <div class="course-image">
+                    <img [src]="course.thumbnailUrl || 'assets/default-course.jpg'" 
+                         [alt]="course.title"
+                         (error)="$any($event.target).src='assets/default-course.jpg'">
+                    <div class="course-overlay">
+                        <div class="badge-container">
+                            <span class="difficulty-badge" 
+                                  [style.background-color]="getDifficultyColor(course.difficulty)">
+                                <i class="fas" [ngClass]="getDifficultyIcon(course.difficulty)"></i>
+                                {{ course.difficulty || 'BEGINNER' }}
+                            </span>
+                            <span *ngIf="isEnrolled(course.id)" class="enrolled-badge">
+                                <i class="fas fa-check-circle"></i> Enrolled
+                            </span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="course-content">
+                    <h3>{{ course.title }}</h3>
+                    <p class="course-description">{{ course.description || 'No description available' }}</p>
+
+                    <div class="course-meta">
+                        <div class="meta-item">
+                            <i class="fas fa-user-tie"></i>
+                            <span>{{ course.instructorName || course.instructorEmail }}</span>
+                        </div>
+                        <div class="meta-item">
+                            <i class="fas fa-layer-group"></i>
+                            <span>{{ course.topics?.length || 0 }} Topics</span>
+                        </div>
+                    </div>
+
+                    <div class="course-subjects" *ngIf="course.subjects && course.subjects.length > 0">
+                        <span *ngFor="let subject of course.subjects" class="subject-tag">
+                            {{ subject }}
+                        </span>
+                    </div>
+
+                    <div class="course-actions">
+                        <!-- Show Enroll button if not enrolled -->
+                        <button *ngIf="!isEnrolled(course.id)" class="btn-enroll" (click)="enrollCourse(course)">
+                            <i class="fas fa-user-plus"></i> Enroll Now
+                        </button>
+                        
+                        <!-- Show Start Learning if enrolled -->
+                        <button *ngIf="isEnrolled(course.id)" class="btn-enrolled" (click)="startCourse(course)">
+                            <i class="fas fa-check-circle"></i> Enrolled
+                        </button>
+                        
+                        <button class="btn-details" (click)="viewCourseDetails(course)">
+                            <i class="fas fa-info-circle"></i> Details
+                        </button>
+                        
+                        <button class="btn-recommend" (click)="addToRecommendations(course, $event)">
+                            <i class="fas fa-star"></i> Add to Recommendations
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

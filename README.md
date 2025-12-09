@@ -1,325 +1,202 @@
-# JWT Authentication System with Role-Based Dashboards
+# Learning Management System (LMS)
 
-A full-stack authentication system built with **Spring Boot**, **Angular**, and **MongoDB** featuring JWT-based authentication and role-based access control (RBAC) with three distinct dashboards.
+A full-stack Learning Management System built with Angular and Spring Boot, featuring adaptive learning, AI-powered quizzes, and comprehensive performance tracking.
 
 ## Features
 
-- **User Authentication**: Secure registration and login system
-- **JWT Token Management**: Stateless authentication with JWT tokens
-- **Role-Based Access Control**: Three user roles with dedicated dashboards
-  - **Student Dashboard**: Course enrollment, learning progress, assignments
-  - **Instructor Dashboard**: Course management, student management, analytics
-  - **Admin Dashboard**: User management, system configuration, platform oversight
-- **Modern UI**: Responsive design with gradient themes and smooth animations
-- **Secure API**: Protected endpoints with JWT validation
+### Core Functionality
+
+- User Authentication with JWT-based secure authentication and role-based access control
+- Course Management to create, update, and manage courses with topics and subtopics
+- Content Delivery including video lectures, PDF materials, and interactive quizzes
+- Adaptive Learning with personalized learning paths based on student performance
+- AI Quiz Generation powered by Groq AI with multiple question types
+- Performance Tracking with real-time analytics and progress monitoring
+- Cloudinary Integration for cloud-based media storage
+
+### User Roles
+
+- **Admin** - System-wide management and user administration
+- **Instructor** - Course creation, content management, and student monitoring
+- **Student** - Course enrollment, learning, and progress tracking
 
 ## Tech Stack
 
 ### Backend
 
-- **Spring Boot 3.2.0**
-- **Java 17**
-- **MongoDB** (NoSQL Database)
-- **Spring Security** (Authentication & Authorization)
-- **JWT (JSON Web Tokens)** (io.jsonwebtoken)
-- **Maven** (Build Tool)
+- Framework: Spring Boot 3.2.0
+- Language: Java 17
+- Database: MongoDB Atlas
+- Security: Spring Security with JWT
+- API: RESTful architecture
+- Cloud Storage: Cloudinary
+- AI Integration: Groq API (llama-3.3-70b-versatile)
 
 ### Frontend
 
-- **Angular 17**
-- **TypeScript**
-- **RxJS** (Reactive Programming)
-- **Angular Router** (Navigation)
-- **Angular Forms** (Template-driven & Reactive)
+- Framework: Angular
+- Language: TypeScript
+- Styling: CSS with Material Design
+- HTTP Client: Angular HttpClient
+- Routing: Angular Router
 
-## Project Structure
+## Architecture
 
 ```
-LOGIN_PAGE/
-├── backend/
-│   ├── src/main/java/com/example/auth/
-│   │   ├── controller/
-│   │   │   ├── AuthController.java (Login/Register)
-│   │   │   ├── StudentController.java
-│   │   │   ├── InstructorController.java
-│   │   │   └── AdminController.java
-│   │   ├── model/
-│   │   │   ├── User.java
-│   │   │   ├── LoginRequest.java
-│   │   │   ├── RegisterRequest.java
-│   │   │   └── AuthResponse.java
-│   │   ├── repository/
-│   │   │   └── UserRepository.java
-│   │   ├── security/
-│   │   │   ├── JwtUtil.java
-│   │   │   ├── JwtFilter.java
-│   │   │   └── SecurityConfig.java
-│   │   ├── service/
-│   │   │   └── AuthService.java
-│   │   └── AuthSystemApplication.java
-│   ├── src/main/resources/
-│   │   └── application.properties
-│   └── pom.xml
+├── backend/                  # Spring Boot backend
+│   ├── src/main/java/
+│   │   └── com/authsystem/
+│   │       ├── controller/   # REST controllers
+│   │       ├── model/        # MongoDB entities
+│   │       ├── repository/   # Data access layer
+│   │       ├── service/      # Business logic
+│   │       └── security/     # JWT & authentication
+│   └── pom.xml              # Maven dependencies
 │
-└── frontend/
-    ├── src/app/
-    │   ├── auth/
-    │   │   ├── login/
-    │   │   └── register/
-    │   ├── dashboards/
-    │   │   ├── student-dashboard/
-    │   │   ├── instructor-dashboard/
-    │   │   └── admin-dashboard/
-    │   ├── guards/
-    │   │   ├── auth.guard.ts
-    │   │   └── role.guard.ts
-    │   ├── services/
-    │   │   └── auth.service.ts
-    │   ├── app-routing.module.ts
-    │   └── app.module.ts
-    └── package.json
+├── frontend/                 # Angular frontend
+│   ├── src/app/
+│   │   ├── auth/            # Authentication components
+│   │   ├── components/      # Shared components
+│   │   ├── dashboards/      # Role-specific dashboards
+│   │   ├── guards/          # Route guards
+│   │   ├── services/        # API services
+│   │   └── pipes/           # Custom pipes
+│   └── package.json         # NPM dependencies
+│
+└── tools/                    # Build tools (Maven, JDK)
 ```
 
 ## Getting Started
 
 ### Prerequisites
 
-- **Java 17** or higher
-- **Maven 3.6+**
-- **Node.js 18+** and **npm 9+**
-- **MongoDB 6.0+** (running on `localhost:27017`)
+- Java 17 or higher
+- Node.js 14 or higher
+- MongoDB Atlas account
+- Cloudinary account
+- Groq API key
 
-### Backend Setup
+### Environment Configuration
 
-1. **Navigate to backend directory:**
-
-```powershell
-cd C:\LOGIN_PAGE\backend
-```
-
-2. **Configure MongoDB connection:**
-   Edit `src/main/resources/application.properties`:
+Configure the following in `backend/src/main/resources/application.properties`:
 
 ```properties
-spring.data.mongodb.uri=mongodb://localhost:27017/auth_system
+spring.data.mongodb.uri=<your-mongodb-uri>
+jwt.secret=<your-jwt-secret>
+cloudinary.cloud.name=<your-cloud-name>
+cloudinary.api.key=<your-api-key>
+cloudinary.api.secret=<your-api-secret>
+openai.api.key=<your-groq-api-key>
 ```
 
-3. **Build and run the Spring Boot application:**
+### Installation & Setup
 
-```powershell
+#### Backend Setup
+
+```bash
+cd backend
 mvn clean install
 mvn spring-boot:run
 ```
 
-The backend will start on `http://localhost:8080`
+Backend runs on http://localhost:8081
 
-### Frontend Setup
+#### Frontend Setup
 
-1. **Navigate to frontend directory:**
-
-```powershell
-cd C:\LOGIN_PAGE\frontend
-```
-
-2. **Install dependencies:**
-
-```powershell
+```bash
+cd frontend
 npm install
+ng serve
 ```
 
-3. **Start the Angular development server:**
-
-```powershell
-npm start
-```
-
-The frontend will start on `http://localhost:4200`
+Frontend runs on http://localhost:4200
 
 ## API Endpoints
 
-### Authentication APIs
+### Authentication
 
-- `POST /api/auth/register` - Register new user
-- `POST /api/auth/login` - User login
-- `GET /api/auth/validate` - Validate JWT token
+- POST /api/auth/login - User login
+- POST /api/auth/register - User registration
 
-### Student APIs (Role: STUDENT)
+### Courses
 
-- `GET /api/student/dashboard` - Get student dashboard data
-- `GET /api/student/courses` - Get enrolled courses
+- GET /api/courses - List all courses
+- GET /api/courses/{id} - Get course details
+- POST /api/courses - Create course (Instructor)
+- PUT /api/courses/{id} - Update course (Instructor)
+- DELETE /api/courses/{id} - Delete course (Instructor)
 
-### Instructor APIs (Role: INSTRUCTOR)
+### Adaptive Learning
 
-- `GET /api/instructor/dashboard` - Get instructor dashboard data
-- `GET /api/instructor/courses` - Get instructor's courses
+- POST /api/adaptive/quiz-attempt - Record quiz attempt
+- GET /api/adaptive/performance - Get student performance
+- GET /api/adaptive/progress - Get learning progress
 
-### Admin APIs (Role: ADMIN)
+### AI Quiz
 
-- `GET /api/admin/dashboard` - Get admin dashboard data
-- `GET /api/admin/users` - Get all users
+- POST /api/ai-quiz/generate - Generate AI quiz
+- POST /api/ai-quiz/save - Save generated quiz
+- GET /api/ai-quiz/course/{courseId} - Get quizzes by course
 
-## Authentication Flow
+### Student Progress
 
-1. User registers with email, password, name, role, and phone
-2. User logs in with email and password
-3. Backend validates credentials and generates JWT token
-4. JWT token contains user email, role, and fullName
-5. Frontend stores token in localStorage
-6. All subsequent requests include JWT token in Authorization header
-7. Backend validates token and authorizes based on role
-8. Users are redirected to role-specific dashboards
+- POST /api/progress/video-watch - Track video viewing
+- POST /api/progress/pdf-view - Track PDF viewing
+- POST /api/progress/quiz-attempt - Track quiz completion
+- GET /api/progress/student/{email}/course/{courseId} - Get progress
 
-## User Roles
+## Key Features
 
-### Student (STUDENT)
+### Adaptive Learning System
 
-- Access to learning dashboard
-- View enrolled courses
-- Track progress and assignments
-- View grades and achievements
+- Tracks student performance across topics
+- Adjusts difficulty levels dynamically (BEGINNER/INTERMEDIATE/ADVANCED)
+- Recommends personalized learning paths
+- Calculates overall scores and completion percentages
 
-### Instructor (INSTRUCTOR)
+### AI Quiz Generation
 
-- Upload and manage courses
-- Manage enrolled students
-- Create and grade assignments
-- View course analytics
+- Generates quizzes using Groq AI API
+- Supports multiple question types: MCQ, True/False, Short Answer
+- Customizable difficulty and topic coverage
+- Automatic validation and scoring
 
-### Admin (ADMIN)
+### Performance Tracking
 
-- Manage all users (students, instructors, admins)
-- Approve and manage all courses
-- Configure platform settings
-- View system-wide analytics and reports
+- Real-time progress monitoring
+- Topic-wise score breakdown
+- Time spent analytics
+- Strength/weakness identification
+- Quiz attempt history
 
-## Security Features
+## Security
 
-- **Password Encryption**: BCrypt hashing
-- **JWT Token**: Secure stateless authentication
-- **CORS Configuration**: Configured for Angular frontend
-- **Role-Based Access Control**: Route guards on frontend and backend
-- **Token Expiration**: 24-hour token validity
-- **Protected Routes**: All dashboard routes require authentication
+- Authentication: JWT (JSON Web Tokens)
+- Authorization: Role-based access control (ADMIN, INSTRUCTOR, STUDENT)
+- Password Encryption: BCrypt hashing
+- CORS: Configured for frontend-backend communication
+- Token Expiration: Automatic session management
 
-## Testing the Application
+## Database Schema
 
-### Register Users
+### Collections
 
-**Student:**
+- users - User accounts and authentication
+- courses - Course catalog and metadata
+- enrollments - Student-course relationships
+- student_performance - Adaptive learning data
+- student_progress - Activity tracking
+- ai_quiz - AI-generated quizzes
+- mcq - Traditional MCQ quizzes
 
-```json
-{
-  "email": "student@example.com",
-  "password": "password123",
-  "fullName": "John Student",
-  "role": "STUDENT",
-  "phone": "1234567890"
-}
-```
+## Quick Start Guide
 
-**Instructor:**
-
-```json
-{
-  "email": "instructor@example.com",
-  "password": "password123",
-  "fullName": "Jane Instructor",
-  "role": "INSTRUCTOR",
-  "phone": "0987654321"
-}
-```
-
-**Admin:**
-
-```json
-{
-  "email": "admin@example.com",
-  "password": "password123",
-  "fullName": "Admin User",
-  "role": "ADMIN",
-  "phone": "5555555555"
-}
-```
-
-### Login and Access Dashboards
-
-1. Navigate to `http://localhost:4200/login`
-2. Login with registered credentials
-3. You'll be automatically redirected to the appropriate dashboard based on your role
-
-## UI Features
-
-- **Modern Gradient Design**: Purple/violet theme throughout
-- **Responsive Layout**: Works on desktop, tablet, and mobile
-- **Smooth Animations**: CSS transitions and keyframe animations
-- **Role Badges**: Visual indicators for different user roles
-- **Icon Integration**: SVG icons for better visual appeal
-- **Card-Based Layout**: Clean, organized dashboard cards
-
-## Development
-
-### Backend Development
-
-- Port: `8080`
-- Hot reload: Enabled with Spring Boot DevTools
-- API testing: Use Postman or curl
-
-### Frontend Development
-
-- Port: `4200`
-- Hot reload: Automatic with `ng serve`
-- Browser: Chrome DevTools for debugging
-
-## Environment Variables
-
-### Backend (`application.properties`)
-
-```properties
-server.port=8080
-spring.data.mongodb.uri=mongodb://localhost:27017/auth_system
-jwt.secret=YourSuperSecretKeyForJWTTokenGenerationMustBeLongEnough123456789
-jwt.expiration=86400000
-cors.allowed.origins=http://localhost:4200
-```
-
-### Frontend (`environment.ts`)
-
-API URL is configured in `auth.service.ts`:
-
-```typescript
-private apiUrl = 'http://localhost:8080/api/auth';
-```
-
-## Troubleshooting
-
-### MongoDB Connection Issues
-
-- Ensure MongoDB is running: `mongod`
-- Check connection string in `application.properties`
-
-### CORS Errors
-
-- Verify `cors.allowed.origins` in backend configuration
-- Check browser console for specific CORS errors
-
-### JWT Token Issues
-
-- Clear browser localStorage and re-login
-- Check token expiration time
-
-### Port Already in Use
-
-- Backend: Change `server.port` in `application.properties`
-- Frontend: Use `ng serve --port 4300`
+1. Clone the repository
+2. Configure environment variables in application.properties
+3. Start the backend with mvn spring-boot:run
+4. Start the frontend with ng serve
+5. Access the application at http://localhost:4200
 
 ## License
 
-This project is open-source and available for educational purposes.
-
-## Author
-
-Built with using Spring Boot + Angular + MongoDB
-
----
-
-**Happy Coding! **
+This project is licensed under the MIT License.

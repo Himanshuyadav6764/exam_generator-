@@ -1,0 +1,234 @@
+<div class="content-management-container">
+  <div class="header">
+    <h2>Manage Course Content: {{course?.title}}</h2>
+    <button class="btn btn-primary" (click)="toggleForm()">
+      {{showForm ? 'Cancel' : 'Add New Content'}}
+    </button>
+  </div>
+
+  <div class="alert alert-success" *ngIf="message">{{message}}</div>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+  <div class="content-form" *ngIf="showForm">
+    <h3>{{editingContent ? 'Edit Content' : 'Add New Sub-Content'}}</h3>
+    <form (ngSubmit)="onSubmit()">
+      <div class="form-row">
+        <div class="form-group">
+          <label for="title">Content Title *</label>
+          <input 
+            type="text" 
+            id="title" 
+            [(ngModel)]="subContent.title" 
+            name="title" 
+            class="form-control"
+            placeholder="e.g., Introduction to Java Variables"
+            required>
+        </div>
+
+        <div class="form-group">
+          <label for="contentType">Content Type *</label>
+          <select id="contentType" [(ngModel)]="subContent.contentType" name="contentType" class="form-control">
+            <option value="VIDEO">Video Upload</option>
+            <option value="PDF">PDF Upload</option>
+            <option value="LINK">External Link</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- File Upload Section -->
+      <div class="form-group" *ngIf="subContent.contentType === 'VIDEO'">
+        <label for="videoFile">📹 Upload Video File *</label>
+        <input 
+          type="file" 
+          id="videoFile" 
+          (change)="onVideoFileSelected($event)" 
+          accept="video/*"
+          class="form-control">
+        <small class="form-hint" *ngIf="selectedVideoFile">
+          Selected: {{selectedVideoFile.name}} ({{(selectedVideoFile.size / 1024 / 1024).toFixed(2)}} MB)
+        </small>
+      </div>
+
+      <div class="form-group" *ngIf="subContent.contentType === 'PDF'">
+        <label for="pdfFile">📄 Upload PDF File *</label>
+        <input 
+          type="file" 
+          id="pdfFile" 
+          (change)="onPdfFileSelected($event)" 
+          accept=".pdf"
+          class="form-control">
+        <small class="form-hint" *ngIf="selectedPdfFile">
+          Selected: {{selectedPdfFile.name}} ({{(selectedPdfFile.size / 1024 / 1024).toFixed(2)}} MB)
+        </small>
+      </div>
+
+      <div class="form-group" *ngIf="subContent.contentType === 'LINK'">
+        <label for="url">Content URL * (YouTube or External Link)</label>
+        <input 
+          type="url" 
+          id="url" 
+          [(ngModel)]="subContent.url" 
+          name="url" 
+          class="form-control"
+          placeholder="https://www.youtube.com/watch?v=...">
+      </div>
+
+      <!-- Thumbnail Upload for Videos -->
+      <div class="form-group" *ngIf="subContent.contentType === 'VIDEO'">
+        <label for="thumbnailFile">🖼️ Upload Thumbnail (Optional)</label>
+        <input 
+          type="file" 
+          id="thumbnailFile" 
+          (change)="onThumbnailFileSelected($event)" 
+          accept="image/*"
+          class="form-control">
+        <small class="form-hint" *ngIf="selectedThumbnailFile">
+          Selected: {{selectedThumbnailFile.name}}
+        </small>
+      </div>
+
+      <!-- Upload Progress -->
+      <div class="upload-progress" *ngIf="uploading">
+        <div class="progress-bar">
+          <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+        </div>
+        <p>Uploading... {{uploadProgress}}%</p>
+      </div>
+
+      <div class="form-group">
+        <label for="description">Description</label>
+        <textarea 
+          id="description" 
+          [(ngModel)]="subContent.description" 
+          name="description" 
+          class="form-control"
+          rows="3"
+          placeholder="Describe this content..."></textarea>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group topic-selection">
+          <label for="topic">Topic *</label>
+          <select 
+            id="topic" 
+            [(ngModel)]="subContent.topic" 
+            name="topic" 
+            class="form-control"
+            required>
+            <option value="" disabled selected>Select a topic</option>
+            <option *ngFor="let topic of course?.topics" [value]="topic">{{ topic }}</option>
+          </select>
+          <small class="form-hint">Choose which topic this content belongs to</small>
+        </div>
+
+        <div class="form-group">
+          <label for="difficulty">Difficulty Level</label>
+          <select id="difficulty" [(ngModel)]="subContent.difficulty" name="difficulty" class="form-control">
+            <option value="BEGINNER">Beginner</option>
+            <option value="INTERMEDIATE">Intermediate</option>
+            <option value="ADVANCED">Advanced</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="form-row">
+        <div class="form-group">
+          <label for="score">Score Points</label>
+          <input 
+            type="number" 
+            id="score" 
+            [(ngModel)]="subContent.score" 
+            name="score" 
+            class="form-control"
+            min="0"
+            placeholder="10">
+          <small class="form-hint">Points earned for completing this content</small>
+        </div>
+
+        <div class="form-group">
+          <label for="duration">Duration (minutes)</label>
+          <input 
+            type="number" 
+            id="duration" 
+            [(ngModel)]="subContent.duration" 
+            name="duration" 
+            class="form-control"
+            min="0"
+            placeholder="15">
+        </div>
+
+        <div class="form-group">
+          <label for="orderIndex">Order Position</label>
+          <input 
+            type="number" 
+            id="orderIndex" 
+            [(ngModel)]="subContent.orderIndex" 
+            name="orderIndex" 
+            class="form-control"
+            min="0"
+            placeholder="0">
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label class="checkbox-label">
+          <input 
+            type="checkbox" 
+            [(ngModel)]="subContent.isPreview" 
+            name="isPreview">
+          <span>Allow preview without enrollment</span>
+        </label>
+      </div>
+
+      <div class="button-group">
+        <button type="submit" class="btn btn-success">{{editingContent ? 'Update' : 'Add'}} Content</button>
+        <button type="button" class="btn btn-outline" (click)="toggleForm()">Cancel</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="content-list">
+    <h3>Course Contents ({{contents.length}})</h3>
+    
+    <div class="content-card" *ngFor="let content of contents">
+      <div class="content-header">
+        <div class="content-info">
+          <h4>{{content.title}}</h4>
+          <div class="content-meta">
+            <span class="badge badge-type">{{content.contentType}}</span>
+            <span class="badge badge-difficulty">{{content.difficulty}}</span>
+            <span class="badge badge-topic">{{content.topic}}</span>
+            <span class="meta-item">{{content.score}} pts</span>
+            <span class="meta-item">{{content.duration}} min</span>
+            <span class="badge badge-preview" *ngIf="content.isPreview">Preview</span>
+          </div>
+        </div>
+        <div class="content-actions">
+          <button class="btn btn-edit" (click)="editContent(content)">Edit</button>
+          <button class="btn btn-delete" (click)="deleteContent(content.id)">Delete</button>
+        </div>
+      </div>
+
+      <p class="content-description" *ngIf="content.description">{{content.description}}</p>
+
+      <div class="content-preview" *ngIf="content.contentType === 'VIDEO' && content.url.includes('youtube')">
+        <iframe 
+          [src]="getYouTubeEmbedUrl(content.url) | safe: 'resourceUrl'" 
+          frameborder="0" 
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+          allowfullscreen>
+        </iframe>
+      </div>
+
+      <div class="content-link" *ngIf="content.contentType !== 'VIDEO' || !content.url.includes('youtube')">
+        <a [href]="content.url" target="_blank" class="link-button">
+          View {{content.contentType}} Content
+        </a>
+      </div>
+    </div>
+
+    <div class="empty-state" *ngIf="contents.length === 0">
+      <p>No content added yet. Click "Add New Content" to get started!</p>
+    </div>
+  </div>
+</div>

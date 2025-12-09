@@ -6,6 +6,7 @@ import lombok.NoArgsConstructor;
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
 import org.springframework.data.mongodb.core.index.Indexed;
+import java.time.LocalDateTime;
 
 @Data
 @AllArgsConstructor
@@ -27,4 +28,6 @@ public class User {
     private String phone;
     
     private boolean enabled = true;
+    
+    private LocalDateTime createdAt = LocalDateTime.now();
 }

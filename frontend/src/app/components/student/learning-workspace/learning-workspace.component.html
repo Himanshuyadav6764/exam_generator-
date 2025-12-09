@@ -1,0 +1,277 @@
+<div class="workspace-container">
+  <!-- Sticky Navigation Bar -->
+  <nav class="workspace-navbar">
+    <div class="navbar-left">
+      <button class="back-btn" (click)="goBack()">
+        ← Back
+      </button>
+      <div class="course-info">
+        <h2>{{ subtopicName }}</h2>
+        <p>{{ topicName }}</p>
+      </div>
+    </div>
+    
+    <div class="navbar-tabs">
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'video'"
+        (click)="switchTab('video')">
+        <span class="tab-icon">🎥</span>
+        <span class="tab-label">Video</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'pdf'"
+        (click)="switchTab('pdf')">
+        <span class="tab-icon">📄</span>
+        <span class="tab-label">PDF</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'mcq'"
+        (click)="switchTab('mcq')">
+        <span class="tab-icon">📝</span>
+        <span class="tab-label">MCQ</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'notes'"
+        (click)="switchTab('notes')">
+        <span class="tab-icon">📒</span>
+        <span class="tab-label">Notes</span>
+      </button>
+      <button 
+        class="tab-btn" 
+        [class.active]="activeTab === 'assignment'"
+        (click)="switchTab('assignment')">
+        <span class="tab-icon">📋</span>
+        <span class="tab-label">Assignment</span>
+      </button>
+    </div>
+  </nav>
+
+  <!-- Main Content Area -->
+  <div class="workspace-content">
+    <!-- Video Tab -->
+    <div *ngIf="activeTab === 'video'" class="content-panel video-panel">
+      <div class="video-container" *ngIf="videoUrls.length > 0">
+        <iframe 
+          [src]="getSafeUrl(videoUrls[currentVideoIndex])"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+        
+        <div class="video-controls" *ngIf="videoUrls.length > 1">
+          <button class="control-btn" (click)="previousVideo()" [disabled]="currentVideoIndex === 0">
+            ← Previous
+          </button>
+          <span class="video-counter">{{ currentVideoIndex + 1 }} / {{ videoUrls.length }}</span>
+          <button class="control-btn" (click)="nextVideo()" [disabled]="currentVideoIndex === videoUrls.length - 1">
+            Next →
+          </button>
+        </div>
+      </div>
+      
+      <div class="empty-state" *ngIf="videoUrls.length === 0">
+        <div class="empty-icon">🎥</div>
+        <h3>No Videos Available</h3>
+        <p>Videos for this topic will be added soon</p>
+      </div>
+    </div>
+
+    <!-- PDF Tab -->
+    <div *ngIf="activeTab === 'pdf'" class="content-panel pdf-panel">
+      <div class="pdf-container" *ngIf="pdfUrls.length > 0">
+        <iframe 
+          [src]="getSafePdfUrl(pdfUrls[currentPdfIndex])"
+          frameborder="0"
+          style="width: 100%; height: 100%; border: none;">
+        </iframe>
+        
+        <div class="pdf-info">
+          <span class="info-text">📄 Supports: PDF, Word, Excel, PowerPoint, and more</span>
+        </div>
+        
+        <div class="pdf-controls" *ngIf="pdfUrls.length > 1">
+          <button class="control-btn" (click)="previousPdf()" [disabled]="currentPdfIndex === 0">
+            ← Previous
+          </button>
+          <span class="pdf-counter">{{ currentPdfIndex + 1 }} / {{ pdfUrls.length }}</span>
+          <button class="control-btn" (click)="nextPdf()" [disabled]="currentPdfIndex === pdfUrls.length - 1">
+            Next →
+          </button>
+        </div>
+      </div>
+      
+      <div class="empty-state" *ngIf="pdfUrls.length === 0">
+        <div class="empty-icon">📄</div>
+        <h3>No PDFs Available</h3>
+        <p>PDF materials for this topic will be added soon</p>
+      </div>
+    </div>
+
+    <!-- MCQ Tab -->
+    <div *ngIf="activeTab === 'mcq'" class="content-panel mcq-panel">
+      <div class="mcq-container" *ngIf="mcqCount > 0">
+        
+        <!-- Quiz Not Started Yet -->
+        <div *ngIf="!quizStarted && !quizCompleted" class="quiz-intro">
+          <div class="mcq-header">
+            <h3>📝 Multiple Choice Questions</h3>
+            <p>Test your understanding with {{ mcqCount }} question{{ mcqCount > 1 ? 's' : '' }}</p>
+          </div>
+          
+          <div class="quiz-card">
+            <div class="quiz-placeholder">
+              <div class="placeholder-icon">🎯</div>
+              <h4>Quiz Module</h4>
+              <p>Ready to test your knowledge on this topic?</p>
+              <button class="start-quiz-btn" (click)="startQuiz()">Start Quiz</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz In Progress -->
+        <div *ngIf="quizStarted && !quizCompleted" class="quiz-active">
+          <div class="quiz-header">
+            <h3>Question {{ currentQuestionIndex + 1 }} of {{ mcqQuestions.length }}</h3>
+            <div class="quiz-progress">
+              <div class="progress-bar">
+                <div class="progress-fill" [style.width.%]="((currentQuestionIndex + 1) / mcqQuestions.length) * 100"></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="question-card" *ngIf="currentQuestion">
+            <h4 class="question-text">{{ currentQuestion.question }}</h4>
+            
+            <div class="options-container">
+              <div *ngFor="let option of currentQuestion.options; let i = index" 
+                   class="option-item"
+                   [class.selected]="selectedAnswer === i"
+                   [class.disabled]="answerSubmitted"
+                   [class.correct]="answerSubmitted && i === currentQuestion.correctAnswerIndex"
+                   [class.incorrect]="answerSubmitted && i === selectedAnswer && i !== currentQuestion.correctAnswerIndex"
+                   (click)="!answerSubmitted && selectAnswer(i)">
+                <div class="option-indicator">{{ ['A', 'B', 'C', 'D'][i] }}</div>
+                <div class="option-text">{{ option }}</div>
+                <div class="option-icon" *ngIf="answerSubmitted">
+                  <span *ngIf="i === currentQuestion.correctAnswerIndex" class="correct-icon">✓</span>
+                  <span *ngIf="i === selectedAnswer && i !== currentQuestion.correctAnswerIndex" class="incorrect-icon">✗</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="explanation-box" *ngIf="answerSubmitted && currentQuestion.explanation">
+              <h5>💡 Explanation:</h5>
+              <p>{{ currentQuestion.explanation }}</p>
+            </div>
+
+            <div class="question-actions">
+              <button class="btn-secondary" (click)="previousQuestion()" *ngIf="currentQuestionIndex > 0" [disabled]="!answerSubmitted">
+                ← Previous
+              </button>
+              <button class="btn-primary" (click)="submitAnswer()" *ngIf="!answerSubmitted" [disabled]="selectedAnswer === null">
+                Submit Answer
+              </button>
+              <button class="btn-primary" (click)="nextQuestion()" *ngIf="answerSubmitted && currentQuestionIndex < mcqQuestions.length - 1">
+                Next Question →
+              </button>
+              <button class="btn-success" (click)="finishQuiz()" *ngIf="answerSubmitted && currentQuestionIndex === mcqQuestions.length - 1">
+                Finish Quiz
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Quiz Completed -->
+        <div *ngIf="quizCompleted" class="quiz-results">
+          <div class="results-header">
+            <div class="results-icon">🎉</div>
+            <h3>Quiz Completed!</h3>
+          </div>
+
+          <div class="score-card">
+            <div class="score-display">
+              <div class="score-number">{{ quizScore }}</div>
+              <div class="score-label">out of {{ mcqQuestions.length }}</div>
+            </div>
+            <div class="score-percentage">{{ getScorePercentage() }}%</div>
+          </div>
+
+          <div class="results-summary">
+            <div class="summary-item correct">
+              <span class="summary-icon">✓</span>
+              <span class="summary-text">{{ quizScore }} Correct</span>
+            </div>
+            <div class="summary-item incorrect">
+              <span class="summary-icon">✗</span>
+              <span class="summary-text">{{ mcqQuestions.length - quizScore }} Incorrect</span>
+            </div>
+          </div>
+
+          <div class="results-actions">
+            <button class="btn-primary" (click)="retakeQuiz()">Retake Quiz</button>
+            <button class="btn-secondary" (click)="exitQuiz()">Back to Course</button>
+          </div>
+        </div>
+
+      </div>
+      
+      <div class="empty-state" *ngIf="mcqCount === 0">
+        <div class="empty-icon">📝</div>
+        <h3>No Quizzes Available</h3>
+        <p>MCQ tests for this topic will be added soon</p>
+      </div>
+    </div>
+
+    <!-- Notes Tab -->
+    <div *ngIf="activeTab === 'notes'" class="content-panel notes-panel">
+      <div class="notes-container">
+        <div class="notes-header">
+          <h3>📒 My Notes</h3>
+          <div class="notes-actions">
+            <span class="save-message" *ngIf="notesSaveMessage" [class.success]="notesSaveMessage.includes('✓')">
+              {{ notesSaveMessage }}
+            </span>
+            <button class="save-notes-btn" (click)="saveNotes()" [disabled]="notesSaving">
+              <span *ngIf="!notesSaving">💾 Save Notes</span>
+              <span *ngIf="notesSaving">⏳ Saving...</span>
+            </button>
+          </div>
+        </div>
+        
+        <textarea 
+          class="notes-editor"
+          [(ngModel)]="notes"
+          [disabled]="notesLoading"
+          placeholder="Write your notes here...&#10;&#10;• Key concepts&#10;• Important points&#10;• Questions to review&#10;• Personal insights">
+        </textarea>
+        
+        <div class="notes-footer" *ngIf="notesLoading">
+          Loading notes...
+        </div>
+      </div>
+    </div>
+
+    <!-- Assignment Tab -->
+    <div *ngIf="activeTab === 'assignment'" class="content-panel assignment-panel">
+      <div class="assignment-container">
+        <div class="assignment-header">
+          <h3>📋 Assignment</h3>
+          <span class="deadline-badge">Due: 7 days</span>
+        </div>
+        
+        <div class="assignment-card">
+          <div class="assignment-placeholder">
+            <div class="placeholder-icon">📝</div>
+            <h4>Assignment Module</h4>
+            <p>Assignment submission functionality will be integrated here</p>
+            <button class="upload-btn">Upload Assignment</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

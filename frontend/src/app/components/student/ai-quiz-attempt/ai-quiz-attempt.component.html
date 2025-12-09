@@ -1,0 +1,136 @@
+<div class="ai-quiz-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading AI Quiz...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="!loading && errorMessage" class="error-container">
+    <div class="error-icon">⚠️</div>
+    <h2>{{ errorMessage }}</h2>
+    <button class="back-btn" (click)="goBack()">← Back to Course</button>
+  </div>
+
+  <!-- Quiz Content -->
+  <div *ngIf="!loading && !errorMessage" class="quiz-content">
+    <!-- Header -->
+    <div class="quiz-header">
+      <button class="back-btn" (click)="goBack()">
+        ← Back to Course
+      </button>
+      <h1 class="quiz-title">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+        </svg>
+        AI Quiz - {{ topicName }}
+      </h1>
+      <p class="quiz-subtitle">{{ totalQuestions }} AI-Generated Questions</p>
+    </div>
+
+    <!-- Score Display (After Submission) -->
+    <div *ngIf="submitted" class="score-card">
+      <div class="score-header">
+        <h2>Quiz Results</h2>
+      </div>
+      <div class="score-stats">
+        <div class="stat-item">
+          <div class="stat-value" style="color: #667eea;">{{ score }}%</div>
+          <div class="stat-label">Score</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color: #4CAF50;">{{ correctAnswers }}</div>
+          <div class="stat-label">Correct</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color: #f44336;">{{ wrongAnswers }}</div>
+          <div class="stat-label">Wrong</div>
+        </div>
+        <div class="stat-item">
+          <div class="stat-value" style="color: #FF9800;">{{ totalQuestions }}</div>
+          <div class="stat-label">Total</div>
+        </div>
+      </div>
+      <div class="score-actions">
+        <button class="retry-btn" (click)="retryQuiz()">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="1 4 1 10 7 10"></polyline>
+            <path d="M3.51 15a9 9 0 1 0 2.13-9.36L1 10"></path>
+          </svg>
+          Retry Quiz
+        </button>
+        <button class="continue-btn" (click)="goBack()">Continue Learning</button>
+      </div>
+    </div>
+
+    <!-- Questions List -->
+    <div class="questions-container">
+      <div *ngFor="let question of questions; let i = index" 
+           class="question-card"
+           [class.correct]="submitted && isCorrect(question)"
+           [class.incorrect]="submitted && !isCorrect(question) && question.selectedAnswer">
+        
+        <!-- Question Number and Text -->
+        <div class="question-header">
+          <span class="question-number">Question {{ i + 1 }}</span>
+          <span *ngIf="submitted && isCorrect(question)" class="result-badge correct-badge">
+            ✓ Correct
+          </span>
+          <span *ngIf="submitted && !isCorrect(question) && question.selectedAnswer" class="result-badge wrong-badge">
+            ✗ Wrong
+          </span>
+        </div>
+        <p class="question-text">{{ question.question }}</p>
+
+        <!-- Options -->
+        <div class="options-list">
+          <div *ngFor="let option of question.options; let j = index" 
+               class="option-item"
+               [class.selected]="question.selectedAnswer === j"
+               [class.correct-answer]="submitted && j === question.correctOption"
+               [class.wrong-answer]="submitted && question.selectedAnswer === j && j !== question.correctOption"
+               (click)="selectAnswer(question, j)">
+            <div class="option-radio">
+              <span *ngIf="!submitted || question.selectedAnswer !== j">{{ getOptionLetter(j) }}</span>
+              <svg *ngIf="submitted && j === question.correctOption" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                <polyline points="20 6 9 17 4 12"></polyline>
+              </svg>
+              <svg *ngIf="submitted && question.selectedAnswer === j && j !== question.correctOption" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            </div>
+            <span class="option-text">{{ option }}</span>
+          </div>
+        </div>
+
+        <!-- Explanation (After Submission) -->
+        <div *ngIf="submitted && question.explanation" class="explanation-box">
+          <div class="explanation-header">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <path d="M12 16v-4"></path>
+              <path d="M12 8h.01"></path>
+            </svg>
+            <strong>Explanation</strong>
+          </div>
+          <p class="explanation-text">{{ question.explanation }}</p>
+          <p class="correct-answer-text">
+            <strong>Correct Answer:</strong> {{ question.options[question.correctOption] }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Submit Button -->
+    <div *ngIf="!submitted" class="submit-container">
+      <button class="submit-btn" (click)="submitQuiz()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polyline points="9 11 12 14 22 4"></polyline>
+          <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+        </svg>
+        Submit Quiz
+      </button>
+    </div>
+  </div>
+</div>

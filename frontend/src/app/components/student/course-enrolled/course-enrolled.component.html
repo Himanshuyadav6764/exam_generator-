@@ -1,0 +1,493 @@
+<div class="course-learning-container" *ngIf="!showTopicDetails">
+  <!-- Header Section -->
+  <header class="course-header">
+    <div class="header-top">
+      <div class="logo-section">
+        <div class="logo-icon">∞</div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+        <button class="icon-btn notification-btn" title="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notification-badge">1</span>
+        </button>
+        <button class="profile-btn" (click)="goBack()">
+          <div class="profile-avatar">{{ getUserInitials() }}</div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Course Title and Progress -->
+  <div class="course-title-section">
+    <h1 class="course-title">{{ courseDetails?.title || 'Course Title' }}</h1>
+    <div class="progress-info">
+      <span class="progress-text">{{ completedItems }} of {{ totalItems }} Complete ({{ getCompletionPercentage() }}%)</span>
+      <button class="download-certificate-btn" [disabled]="getCompletionPercentage() < 70">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="7 10 12 15 17 10"></polyline>
+          <line x1="12" y1="15" x2="12" y2="3"></line>
+        </svg>
+        Download Certificate
+      </button>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="getCompletionPercentage()"></div>
+    </div>
+  </div>
+
+  <!-- Student Performance Tracking Section -->
+  <div class="performance-tracking-section" *ngIf="!loadingProgress">
+    <div class="performance-stats-grid">
+      <!-- Overall Score -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-label">OVERALL SCORE</h3>
+          <p class="stat-value">{{ getOverallScore() }}</p>
+        </div>
+      </div>
+
+      <!-- Time Spent -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-label">TIME SPENT</h3>
+          <p class="stat-value">{{ getTimeSpent() }}</p>
+        </div>
+      </div>
+
+      <!-- Quizzes -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+            <line x1="16" y1="13" x2="8" y2="13"></line>
+            <line x1="16" y1="17" x2="8" y2="17"></line>
+            <polyline points="10 9 9 9 8 9"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-label">QUIZZES</h3>
+          <p class="stat-value">{{ normalQuizAttempts }}</p>
+        </div>
+      </div>
+
+      <!-- AI Quiz Performance -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+            <line x1="12" y1="17" x2="12.01" y2="17"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-label">AI QUIZZES</h3>
+          <p class="stat-value">{{ aiQuizAttempts }}</p>
+        </div>
+      </div>
+
+      <!-- Current Level -->
+      <div class="stat-card">
+        <div class="stat-icon" [style.background]="'linear-gradient(135deg, ' + getLevelColor() + ' 0%, ' + getLevelColor() + ' 100%)'">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3 class="stat-label">CURRENT LEVEL</h3>
+          <p class="stat-value">{{ getCurrentLevel() }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Detailed Performance Section -->
+    <div class="performance-details-card">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Student Performance Tracking
+      </h2>
+      
+      <div class="performance-metrics">
+        <div class="metric-item">
+          <span class="metric-label">TOTAL ATTEMPTS</span>
+          <span class="metric-value">{{ normalQuizAttempts + aiQuizAttempts }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">AVERAGE SCORE</span>
+          <span class="metric-value">{{ getAverageScore() }}</span>
+        </div>
+        <div class="metric-item">
+          <span class="metric-label">COMPLETION STATUS</span>
+          <span class="metric-value">{{ getCompletionStatus() }}</span>
+        </div>
+      </div>
+
+      <!-- Quiz Performance Breakdown -->
+      <div class="quiz-breakdown" *ngIf="coursePerformance">
+        <div class="breakdown-section">
+          <h3 class="breakdown-title">
+            <span class="icon">📝</span>
+            Normal Quizzes
+          </h3>
+          <div class="breakdown-stats">
+            <div class="breakdown-stat">
+              <span class="stat-label">Attempts</span>
+              <span class="stat-value">{{ normalQuizAttempts }}</span>
+            </div>
+            <div class="breakdown-stat">
+              <span class="stat-label">Avg Score</span>
+              <span class="stat-value">{{ normalQuizAvgScore }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="breakdown-section ai-section">
+          <h3 class="breakdown-title">
+            <span class="icon">🤖</span>
+            AI Generated Quizzes
+          </h3>
+          <div class="breakdown-stats">
+            <div class="breakdown-stat">
+              <span class="stat-label">Attempts</span>
+              <span class="stat-value">{{ aiQuizAttempts }}</span>
+            </div>
+            <div class="breakdown-stat">
+              <span class="stat-label">Avg Score</span>
+              <span class="stat-value">{{ aiQuizAvgScore }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="breakdown-section time-section">
+          <h3 class="breakdown-title">
+            <span class="icon">⏱️</span>
+            Time Spent
+          </h3>
+          <div class="breakdown-stats">
+            <div class="breakdown-stat">
+              <span class="stat-label">Total</span>
+              <span class="stat-value">{{ formatTimeSpent(totalTimeSpent) }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Progress State -->
+  <div class="performance-tracking-section" *ngIf="loadingProgress">
+    <div class="loading-progress">
+      <div class="spinner-small"></div>
+      <p>Loading performance data...</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs-container">
+    <button class="tab-btn" [class.active]="activeTab === 'chapters'" (click)="activeTab = 'chapters'">
+      Chapters
+    </button>
+    <button class="tab-btn" [class.active]="activeTab === 'noticeboard'" (click)="activeTab = 'noticeboard'">
+      Noticeboard
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner-large"></div>
+    <p>Loading course content...</p>
+  </div>
+
+  <!-- Chapters Tab Content -->
+  <div *ngIf="!loading && activeTab === 'chapters'" class="chapters-content">
+    <div class="topics-list">
+      <div *ngFor="let topic of topics; let i = index" class="topic-card-modern" (click)="openTopicDetails(topic)">
+        <div class="topic-icon-wrapper">
+          <div class="topic-icon-box">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+              <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+            </svg>
+          </div>
+        </div>
+        <div class="topic-content">
+          <h3 class="topic-title">{{ topic.name }}</h3>
+          <p *ngIf="topic.subtopics.length === 0" style="font-size: 12px; color: #999; margin-top: 4px;">Content coming soon</p>
+          <div class="topic-progress-container" *ngIf="topic.subtopics.length > 0">
+            <div class="topic-progress-bar">
+              <div class="topic-progress-fill" [style.width.%]="topic.completionPercentage"></div>
+            </div>
+            <span class="topic-progress-text">{{ topic.completionPercentage }}% Complete</span>
+          </div>
+        </div>
+        <div class="topic-arrow">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 18 15 12 9 6"></polyline>
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Noticeboard Tab Content -->
+  <div *ngIf="!loading && activeTab === 'noticeboard'" class="noticeboard-content">
+    <div class="empty-state">
+      <div class="empty-icon">📢</div>
+      <h3>No announcements yet</h3>
+      <p>Course updates and announcements will appear here</p>
+    </div>
+  </div>
+</div>
+
+<!-- Topic Details Screen -->
+<div class="topic-details-container" *ngIf="showTopicDetails && selectedTopic">
+  <!-- Header -->
+  <header class="course-header">
+    <div class="header-top">
+      <div class="logo-section">
+        <div class="logo-icon">∞</div>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" title="Search">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="11" cy="11" r="8"></circle>
+            <path d="m21 21-4.35-4.35"></path>
+          </svg>
+        </button>
+        <button class="icon-btn notification-btn" title="Notifications">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+            <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+          </svg>
+          <span class="notification-badge">1</span>
+        </button>
+        <button class="profile-btn" (click)="closeTopicDetails()">
+          <div class="profile-avatar">{{ getUserInitials() }}</div>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Topic Title and Progress -->
+  <div class="topic-title-section">
+    <button class="back-link" (click)="closeTopicDetails()">
+      ← Back to Course
+    </button>
+    <h1 class="topic-main-title">{{ selectedTopic.name }}</h1>
+    <div class="topic-overall-progress">
+      <span class="topic-completion-text">{{ selectedTopic.name }}</span>
+      <span class="topic-completion-percentage">{{ selectedTopic.completionPercentage }}% Complete</span>
+    </div>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="selectedTopic.completionPercentage"></div>
+    </div>
+  </div>
+
+  <!-- Content Type Tabs -->
+  <div class="content-sidebar">
+    <button class="sidebar-tab" 
+            [class.active]="contentType === 'video'" 
+            (click)="changeContentType('video')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polygon points="5 3 19 12 5 21 5 3"></polygon>
+      </svg>
+      <span>Video</span>
+    </button>
+    <button class="sidebar-tab" 
+            [class.active]="contentType === 'article'" 
+            (click)="changeContentType('article')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+        <polyline points="14 2 14 8 20 8"></polyline>
+      </svg>
+      <span>Article</span>
+    </button>
+    <button class="sidebar-tab" 
+            [class.active]="contentType === 'mcq'" 
+            (click)="changeContentType('mcq')">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <polyline points="9 11 12 14 22 4"></polyline>
+        <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+      </svg>
+      <span>Quiz/Problem</span>
+    </button>
+    <button class="sidebar-tab" 
+            *ngIf="selectedTopic.hasAIQuiz"
+            [class.active]="contentType === 'ai-quiz'" 
+            (click)="changeContentType('ai-quiz')"
+            style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: 2px solid #667eea;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+      </svg>
+      <span>AI Quiz ({{ selectedTopic.aiQuizCount }})</span>
+    </button>
+  </div>
+
+  <!-- Content Items List -->
+  <div class="content-items-section">
+    <!-- Show message if topic has no subtopics -->
+    <div *ngIf="selectedTopic.subtopics.length === 0" class="empty-state" style="padding: 60px 20px; text-align: center;">
+      <div style="font-size: 48px; margin-bottom: 16px;">📚</div>
+      <h3 style="color: #1e3c72; margin-bottom: 8px;">Content Coming Soon</h3>
+      <p style="color: #666;">The instructor is preparing content for this topic. Please check back later.</p>
+    </div>
+
+    <!-- Video Content -->
+    <div *ngIf="contentType === 'video' && selectedTopic.subtopics.length > 0" class="content-list">
+      <div *ngFor="let item of getVideoContent(); let i = index" 
+           class="content-item" 
+           (click)="openContent(item, 'video')">
+        <div class="content-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="5 3 19 12 5 21 5 3"></polygon>
+          </svg>
+        </div>
+        <div class="content-details">
+          <h4 class="content-title">{{ item.title || 'Video ' + (i + 1) }}</h4>
+          <div class="content-progress-bar-small">
+            <div class="content-progress-fill-small" [style.width.%]="item.completed ? 100 : 0"></div>
+          </div>
+        </div>
+        <div class="content-status">
+          <svg *ngIf="item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2">
+            <circle cx="12" cy="12" r="10" fill="#4CAF50" opacity="0.2"></circle>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+          <svg *ngIf="!item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+        </div>
+      </div>
+      
+      <div *ngIf="getVideoContent().length === 0" class="empty-content">
+        <p>No videos available for this topic</p>
+      </div>
+    </div>
+
+    <!-- PDF Content -->
+    <div *ngIf="contentType === 'article' && selectedTopic.subtopics.length > 0" class="content-list">
+      <div *ngFor="let item of getPDFContent(); let i = index" 
+           class="content-item" 
+           (click)="openContent(item, 'pdf')">
+        <div class="content-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path>
+            <polyline points="14 2 14 8 20 8"></polyline>
+          </svg>
+        </div>
+        <div class="content-details">
+          <h4 class="content-title">{{ item.title || 'PDF Document ' + (i + 1) }}</h4>
+          <div class="content-progress-bar-small">
+            <div class="content-progress-fill-small" [style.width.%]="item.completed ? 100 : 0"></div>
+          </div>
+        </div>
+        <div class="content-status">
+          <svg *ngIf="item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2">
+            <circle cx="12" cy="12" r="10" fill="#4CAF50" opacity="0.2"></circle>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+          <svg *ngIf="!item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+        </div>
+      </div>
+      
+      <div *ngIf="getPDFContent().length === 0" class="empty-content">
+        <p>No PDF documents available for this topic</p>
+      </div>
+    </div>
+
+    <!-- MCQ Content -->
+    <div *ngIf="contentType === 'mcq' && selectedTopic.subtopics.length > 0" class="content-list">
+      <div *ngFor="let item of getMCQContent(); let i = index" 
+           class="content-item" 
+           (click)="openContent(item, 'mcq')">
+        <div class="content-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+        <div class="content-details">
+          <h4 class="content-title">{{ item.title || 'Quiz ' + (i + 1) }}</h4>
+          <div class="content-progress-bar-small">
+            <div class="content-progress-fill-small" [style.width.%]="item.completed ? 100 : 0"></div>
+          </div>
+        </div>
+        <div class="content-status">
+          <svg *ngIf="item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4CAF50" stroke-width="2">
+            <circle cx="12" cy="12" r="10" fill="#4CAF50" opacity="0.2"></circle>
+            <polyline points="9 12 11 14 15 10"></polyline>
+          </svg>
+          <svg *ngIf="!item.completed" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+          </svg>
+        </div>
+      </div>
+      
+      
+      <div *ngIf="getMCQContent().length === 0" class="empty-content">
+        <p>No quizzes available for this topic</p>
+      </div>
+    </div>
+
+    <!-- AI Quiz Content -->
+    <div *ngIf="contentType === 'ai-quiz'" class="content-list">
+      <div *ngFor="let item of getAIQuizContent(); let i = index" 
+           class="content-item" 
+           (click)="openContent(item, 'ai-quiz')"
+           style="border: 2px solid #667eea; background: linear-gradient(135deg, rgba(102, 126, 234, 0.1) 0%, rgba(118, 75, 162, 0.1) 100%);">
+        <div class="content-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M13 2L3 14h9l-1 8 10-12h-9l1-8z"></path>
+          </svg>
+        </div>
+        <div class="content-details">
+          <h4 class="content-title">{{ item.title }}</h4>
+          <p style="color: #667eea; font-size: 12px; margin-top: 4px;">
+            <strong>{{ selectedTopic.aiQuizCount }}</strong> AI-Generated Questions
+          </p>
+          <div class="content-progress-bar-small">
+            <div class="content-progress-fill-small" [style.width.%]="item.completed ? 100 : 0"></div>
+          </div>
+        </div>
+        <div class="content-status">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#667eea" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <path d="m9 12 2 2 4-4"></path>
+          </svg>
+        </div>
+      </div>
+      
+      <div *ngIf="getAIQuizContent().length === 0" class="empty-content">
+        <p>No AI quizzes available for this topic</p>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,156 @@
+<header>
+    <div class="container">
+        <div class="header-content">
+            <div class="logo">
+                <i class="fas fa-graduation-cap"></i>
+                <span>SkillForge</span>
+            </div>
+            <div class="user-info">
+                <div class="user-avatar">{{ userInitials }}</div>
+                <span>{{ fullName }}</span>
+            </div>
+        </div>
+    </div>
+</header>
+
+<div class="container">
+    <div class="dashboard">
+        <div class="sidebar">
+            <div class="nav-item" [class.active]="activeNav === 'dashboard'" (click)="setActiveNav('dashboard')">
+                <i class="fas fa-home"></i>
+                <span>Dashboard</span>
+            </div>
+            <div class="nav-item" [class.active]="activeNav === 'progress'" (click)="setActiveNav('progress')">
+                <i class="fas fa-chart-line"></i>
+                <span>Progress</span>
+            </div>
+            <div class="nav-item" [class.active]="activeNav === 'assignments'" (click)="setActiveNav('assignments')">
+                <i class="fas fa-tasks"></i>
+                <span>Assignments</span>
+            </div>
+            <div class="nav-item" [class.active]="activeNav === 'settings'" (click)="setActiveNav('settings')">
+                <i class="fas fa-cog"></i>
+                <span>Settings</span>
+            </div>
+            <div class="nav-item" [class.active]="activeNav === 'help'" (click)="setActiveNav('help')">
+                <i class="fas fa-question-circle"></i>
+                <span>Help & Support</span>
+            </div>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="main-content">
+            <div class="loading-state">
+                <div class="spinner"></div>
+                <p>Loading your adaptive learning dashboard...</p>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div *ngIf="!loading && performanceData" class="main-content">
+            <div class="welcome-banner">
+                <h1>Welcome back, {{ fullName }}! 👋</h1>
+                <p>Your personalized course recommendations based on your interests.</p>
+            </div>
+
+            <!-- Recommended Courses Section (from Search) -->
+            <div class="content-section recommended-courses-section">
+                <div class="section-header">
+                    <h2>✨ Recommended for You</h2>
+                    <p style="color: #666; margin-top: 5px;">Courses you've shown interest in</p>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="search-container" style="margin-bottom: 20px;">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input 
+                            type="text" 
+                            [(ngModel)]="searchQuery" 
+                            (input)="filterRecommendations()" 
+                            placeholder="Search your recommendations..." 
+                            class="search-input"
+                        />
+                        <button *ngIf="searchQuery" class="clear-search" (click)="clearSearch()">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Loading State -->
+                <div *ngIf="loadingRecommendations" class="loading-message">
+                    <div class="spinner"></div>
+                    <p>Loading recommendations...</p>
+                </div>
+
+                <!-- Recommended Courses Grid -->
+                <div *ngIf="!loadingRecommendations && filteredRecommendations.length > 0" class="recommended-grid">
+                    <div *ngFor="let course of filteredRecommendations" class="recommended-card">
+                        <!-- Delete Button -->
+                        <button class="delete-btn" (click)="deleteRecommendation($event, course.id)" title="Remove from recommendations">
+                            <i class="fas fa-times"></i>
+                        </button>
+
+                        <div class="recommended-thumbnail" (click)="viewRecommendedCourse(course.id)">
+                            <img *ngIf="course.thumbnail" [src]="course.thumbnail" [alt]="course.title" />
+                            <div *ngIf="!course.thumbnail" class="thumbnail-placeholder">📚</div>
+                            <span class="difficulty-badge" [ngClass]="'difficulty-' + course.difficulty?.toLowerCase()">
+                                {{ course.difficulty }}
+                            </span>
+                        </div>
+                        
+                        <div class="recommended-content" (click)="viewRecommendedCourse(course.id)">
+                            <h3 class="recommended-title">{{ course.title }}</h3>
+                            <p class="recommended-description">
+                                {{ course.description?.substring(0, 100) }}{{ course.description?.length > 100 ? '...' : '' }}
+                            </p>
+                            
+                            <div class="recommended-meta">
+                                <span class="meta-item">
+                                    <i class="fas fa-user-tie"></i>
+                                    {{ course.instructorName }}
+                                </span>
+                                <span class="meta-item" *ngIf="course.topicCount">
+                                    <i class="fas fa-book"></i>
+                                    {{ course.topicCount }} Topics
+                                </span>
+                            </div>
+
+                            <div class="course-subjects" *ngIf="course.subjects && course.subjects.length > 0">
+                                <span class="subject-tag" *ngFor="let subject of course.subjects.slice(0, 3)">
+                                    {{ subject }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <div class="recommended-footer" (click)="viewRecommendedCourse(course.id)">
+                            <button class="view-course-btn">
+                                View Course →
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- No Results State (when search doesn't match) -->
+                <div *ngIf="!loadingRecommendations && searchQuery && filteredRecommendations.length === 0 && recommendedCourses.length > 0" class="no-recommendations">
+                    <div class="no-recommendations-icon">🔍</div>
+                    <h3>No matches found</h3>
+                    <p>Try a different search term</p>
+                    <button class="btn btn-outline" (click)="clearSearch()">
+                        Clear Search
+                    </button>
+                </div>
+
+                <!-- No Recommendations State -->
+                <div *ngIf="!loadingRecommendations && recommendedCourses.length === 0" class="no-recommendations">
+                    <div class="no-recommendations-icon">🔍</div>
+                    <h3>Start Exploring!</h3>
+                    <p>Search for courses and click on any course to add it to your recommendations.</p>
+                    <button class="btn btn-primary" routerLink="/my-courses">
+                        <i class="fas fa-search"></i> Search Courses
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

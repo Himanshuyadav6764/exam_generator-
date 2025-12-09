@@ -1,0 +1,199 @@
+<div class="bulk-upload-container">
+  <div class="header">
+    <h2>📦 Bulk Content Upload</h2>
+    <button class="btn-back" (click)="goBack()">← Back to Course</button>
+  </div>
+
+  <div class="course-info" *ngIf="course">
+    <h3>{{ course.title }}</h3>
+    <p>{{ course.description }}</p>
+  </div>
+
+  <!-- Success/Error Messages -->
+  <div class="alert alert-success" *ngIf="message">{{ message }}</div>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{ errorMessage }}</div>
+
+  <!-- Overall Progress -->
+  <div class="overall-progress" *ngIf="overallUploading">
+    <h4>Uploading Content... {{ completedUploads }} / {{ totalUploads }}</h4>
+    <div class="progress-bar-container">
+      <div class="progress-bar-fill" [style.width.%]="(completedUploads / totalUploads) * 100"></div>
+    </div>
+  </div>
+
+  <!-- Topic Selection -->
+  <div class="topic-selection-section">
+    <h3>Step 1: Select Topics</h3>
+    <p class="instruction">Choose the topics you want to upload content for</p>
+    
+    <div class="topics-grid" *ngIf="course && course.topics">
+      <div *ngFor="let topic of course.topics" 
+           class="topic-card"
+           [class.selected]="isTopicSelected(topic.name)"
+           (click)="toggleTopicSelection(topic.name)">
+        <div class="topic-checkbox">
+          <input type="checkbox" 
+                 [checked]="isTopicSelected(topic.name)"
+                 (click)="$event.stopPropagation()">
+        </div>
+        <div class="topic-info">
+          <h4>{{ topic.name }}</h4>
+          <span class="difficulty-badge" [class]="topic.difficulty.toLowerCase()">
+            {{ topic.difficulty }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="selected-count" *ngIf="selectedTopics.length > 0">
+      ✓ {{ selectedTopics.length }} topic(s) selected
+    </div>
+  </div>
+
+  <!-- Upload Forms for Each Selected Topic -->
+  <div class="upload-forms-section" *ngIf="topicContents.length > 0">
+    <h3>Step 2: Upload Content for Each Topic</h3>
+    <p class="instruction">Add video/PDF files and details for each selected topic</p>
+
+    <div class="topic-upload-cards">
+      <div *ngFor="let topicContent of topicContents; let i = index" 
+           class="topic-upload-card"
+           [class.uploaded]="topicContent.uploaded"
+           [class.uploading]="topicContent.uploading"
+           [class.error]="topicContent.error">
+        
+        <div class="card-header">
+          <h4>📚 {{ topicContent.topic }}</h4>
+          <span class="status-badge" *ngIf="topicContent.uploaded">✓ Uploaded</span>
+          <span class="status-badge uploading" *ngIf="topicContent.uploading">⏳ Uploading...</span>
+          <span class="status-badge error" *ngIf="topicContent.error">✗ Error</span>
+        </div>
+
+        <div class="card-body">
+          <!-- Difficulty Selection -->
+          <div class="form-group">
+            <label>Difficulty Level</label>
+            <select [(ngModel)]="topicContent.difficulty" class="form-control" [disabled]="topicContent.uploading || topicContent.uploaded">
+              <option value="BEGINNER">🟢 Beginner</option>
+              <option value="INTERMEDIATE">🟡 Intermediate</option>
+              <option value="ADVANCED">🔴 Advanced</option>
+            </select>
+          </div>
+
+          <!-- Title -->
+          <div class="form-group">
+            <label>Content Title *</label>
+            <input type="text" 
+                   [(ngModel)]="topicContent.title" 
+                   class="form-control"
+                   placeholder="Enter content title"
+                   [disabled]="topicContent.uploading || topicContent.uploaded">
+          </div>
+
+          <!-- Description -->
+          <div class="form-group">
+            <label>Description</label>
+            <textarea [(ngModel)]="topicContent.description" 
+                      class="form-control"
+                      rows="2"
+                      placeholder="Enter content description"
+                      [disabled]="topicContent.uploading || topicContent.uploaded"></textarea>
+          </div>
+
+          <!-- Duration -->
+          <div class="form-group">
+            <label>Duration</label>
+            <input type="text" 
+                   [(ngModel)]="topicContent.duration" 
+                   class="form-control"
+                   placeholder="e.g., 45 minutes"
+                   [disabled]="topicContent.uploading || topicContent.uploaded">
+          </div>
+
+          <!-- File Uploads -->
+          <div class="file-uploads-row">
+            <!-- Video Upload -->
+            <div class="file-upload-group">
+              <label>📹 Video File</label>
+              <div class="file-input-wrapper" *ngIf="!topicContent.videoFile">
+                <input type="file" 
+                       accept="video/*"
+                       (change)="onVideoSelected($event, topicContent.topic)"
+                       [disabled]="topicContent.uploading || topicContent.uploaded">
+                <span class="file-input-label">Choose Video</span>
+              </div>
+              <div class="selected-file" *ngIf="topicContent.videoFile">
+                <span class="file-icon">🎥</span>
+                <span class="file-name">{{ topicContent.videoFile.name }}</span>
+                <span class="file-size">({{ (topicContent.videoFile.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                <button class="btn-remove" (click)="removeVideoFile(topicContent.topic)" *ngIf="!topicContent.uploading && !topicContent.uploaded">✕</button>
+              </div>
+            </div>
+
+            <!-- PDF Upload -->
+            <div class="file-upload-group">
+              <label>📄 PDF File (Optional)</label>
+              <div class="file-input-wrapper" *ngIf="!topicContent.pdfFile">
+                <input type="file" 
+                       accept=".pdf"
+                       (change)="onPdfSelected($event, topicContent.topic)"
+                       [disabled]="topicContent.uploading || topicContent.uploaded">
+                <span class="file-input-label">Choose PDF</span>
+              </div>
+              <div class="selected-file" *ngIf="topicContent.pdfFile">
+                <span class="file-icon">📑</span>
+                <span class="file-name">{{ topicContent.pdfFile.name }}</span>
+                <span class="file-size">({{ (topicContent.pdfFile.size / 1024 / 1024).toFixed(2) }} MB)</span>
+                <button class="btn-remove" (click)="removePdfFile(topicContent.topic)" *ngIf="!topicContent.uploading && !topicContent.uploaded">✕</button>
+              </div>
+            </div>
+
+            <!-- Thumbnail Upload -->
+            <div class="file-upload-group">
+              <label>🖼️ Thumbnail (Optional)</label>
+              <div class="file-input-wrapper" *ngIf="!topicContent.thumbnailFile">
+                <input type="file" 
+                       accept="image/*"
+                       (change)="onThumbnailSelected($event, topicContent.topic)"
+                       [disabled]="topicContent.uploading || topicContent.uploaded">
+                <span class="file-input-label">Choose Image</span>
+              </div>
+              <div class="selected-file" *ngIf="topicContent.thumbnailFile">
+                <span class="file-icon">🖼️</span>
+                <span class="file-name">{{ topicContent.thumbnailFile.name }}</span>
+                <button class="btn-remove" (click)="removeThumbnailFile(topicContent.topic)" *ngIf="!topicContent.uploading && !topicContent.uploaded">✕</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Upload Progress -->
+          <div class="upload-progress-bar" *ngIf="topicContent.uploading">
+            <div class="progress-fill" [style.width.%]="topicContent.uploadProgress"></div>
+            <span class="progress-text">{{ topicContent.uploadProgress }}%</span>
+          </div>
+
+          <!-- Error Message -->
+          <div class="error-message" *ngIf="topicContent.error">
+            ⚠️ {{ topicContent.error }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Upload All Button -->
+    <div class="actions">
+      <button class="btn-upload-all" 
+              (click)="uploadAll()"
+              [disabled]="overallUploading || topicContents.length === 0">
+        <span *ngIf="!overallUploading">🚀 Upload All Content</span>
+        <span *ngIf="overallUploading">⏳ Uploading...</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Empty State -->
+  <div class="empty-state" *ngIf="!course || !course.topics || course.topics.length === 0">
+    <p>📭 No topics available in this course. Please add topics first.</p>
+    <button class="btn-primary" (click)="goBack()">Go Back</button>
+  </div>
+</div>

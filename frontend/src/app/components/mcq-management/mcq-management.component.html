@@ -1,0 +1,147 @@
+<div class="mcq-management-container">
+  <div class="header">
+    <button class="back-btn" (click)="goBack()">← Back to Courses</button>
+    <h2>Manage MCQs for {{ courseName }}</h2>
+    <p style="color: #7f8c8d; font-size: 14px; margin-top: 5px;">
+      {{ courseTopics.length }} topic(s) available
+    </p>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="errorMessage" class="error-message">{{ errorMessage }}</div>
+  <div *ngIf="successMessage" class="success-message">{{ successMessage }}</div>
+
+  <!-- MCQ Form -->
+  <div class="mcq-form">
+    <h3>{{ isEditMode ? 'Edit MCQ' : 'Create New MCQ' }}</h3>
+    
+    <div class="form-group">
+      <label>Topic *</label>
+      <select [(ngModel)]="mcq.topicId" (change)="onTopicChange()" required [disabled]="courseTopics.length === 0">
+        <option value="">{{ courseTopics.length === 0 ? 'No topics available - Please add topics to the course first' : 'Select Topic' }}</option>
+        <option *ngFor="let topic of courseTopics" [value]="topic">{{ topic }}</option>
+      </select>
+      <div *ngIf="courseTopics.length === 0" style="color: #e74c3c; margin-top: 8px; font-size: 14px;">
+        ⚠️ This course has no topics yet. Please go back and add topics to the course before creating MCQs.
+        <a [routerLink]="['/create-course']" style="color: #3498db; text-decoration: underline; margin-left: 5px;">Add Topics</a>
+      </div>
+    </div>
+
+    <div class="form-row">
+      <div class="form-group">
+        <label>Difficulty *</label>
+        <select [(ngModel)]="mcq.difficulty" (change)="onDifficultyChange()" required>
+          <option value="BEGINNER">🟢 Beginner</option>
+          <option value="INTERMEDIATE">🟡 Intermediate</option>
+          <option value="ADVANCED">🔴 Advanced</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Points *</label>
+        <input type="number" [(ngModel)]="mcq.points" min="1" max="100" required />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Question *</label>
+      <textarea [(ngModel)]="mcq.question" rows="3" placeholder="Enter your question here..." required></textarea>
+    </div>
+
+    <div class="options-section">
+      <h4>Answer Options *</h4>
+      <div *ngFor="let option of mcq.options; let i = index" class="option-row">
+        <div class="radio-wrapper">
+          <input type="radio" 
+                 [id]="'option' + i" 
+                 name="correctAnswer" 
+                 [value]="i" 
+                 [(ngModel)]="mcq.correctAnswerIndex" />
+          <label [for]="'option' + i">Correct</label>
+        </div>
+        <input type="text" 
+               [(ngModel)]="mcq.options[i]" 
+               [placeholder]="'Option ' + (i + 1)" 
+               required />
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label>Explanation (Optional)</label>
+      <textarea [(ngModel)]="mcq.explanation" rows="2" placeholder="Explain why this is the correct answer..."></textarea>
+    </div>
+
+    <div class="form-actions">
+      <button class="btn-save" (click)="saveMCQ()" [disabled]="submitting">
+        {{ submitting ? 'Saving...' : (isEditMode ? 'Update MCQ' : 'Save MCQ') }}
+      </button>
+      <button *ngIf="isEditMode" class="btn-cancel" (click)="resetForm()">Cancel</button>
+    </div>
+  </div>
+
+  <!-- MCQ List -->
+  <div class="mcq-list-section">
+    <div class="list-header">
+      <h3>Created MCQs ({{ getFilteredMCQs().length }})</h3>
+      
+      <div class="filters">
+        <select [(ngModel)]="filterDifficulty">
+          <option value="ALL">All Difficulties</option>
+          <option value="BEGINNER">🟢 Beginner</option>
+          <option value="INTERMEDIATE">🟡 Intermediate</option>
+          <option value="ADVANCED">🔴 Advanced</option>
+        </select>
+
+        <select [(ngModel)]="filterTopic">
+          <option value="ALL">All Topics</option>
+          <option *ngFor="let topic of courseTopics" [value]="topic">{{ topic }}</option>
+        </select>
+
+        <button class="btn-create-test" (click)="createMockTest()" [disabled]="mcqList.length === 0">
+          📝 Create Mock Test
+        </button>
+      </div>
+    </div>
+
+    <div *ngIf="getFilteredMCQs().length === 0" class="no-mcqs">
+      No MCQs found. Create your first MCQ above!
+    </div>
+
+    <div class="mcq-cards">
+      <div *ngFor="let mcq of getFilteredMCQs()" class="mcq-card">
+        <div class="mcq-header">
+          <span class="difficulty-badge" [class]="mcq.difficulty?.toLowerCase()">
+            {{ mcq.difficulty === 'BEGINNER' ? '🟢' : mcq.difficulty === 'INTERMEDIATE' ? '🟡' : '🔴' }}
+            {{ mcq.difficulty }}
+          </span>
+          <span class="points-badge">{{ mcq.points }} pts</span>
+        </div>
+
+        <div class="mcq-topic">📚 {{ mcq.topicName || mcq.topicId }}</div>
+
+        <div class="mcq-question">
+          <strong>Q:</strong> {{ mcq.question }}
+        </div>
+
+        <div class="mcq-options">
+          <div *ngFor="let option of mcq.options; let i = index" 
+               class="option" 
+               [class.correct]="i === mcq.correctAnswerIndex">
+            <span class="option-label">{{ ['A', 'B', 'C', 'D'][i] }}.</span>
+            {{ option }}
+            <span *ngIf="i === mcq.correctAnswerIndex" class="correct-mark">✓</span>
+          </div>
+        </div>
+
+        <div *ngIf="mcq.explanation" class="mcq-explanation">
+          <strong>Explanation:</strong> {{ mcq.explanation }}
+        </div>
+
+        <div class="mcq-actions">
+          <button class="btn-edit" (click)="editMCQ(mcq)">Edit</button>
+          <button class="btn-delete" (click)="deleteMCQ(mcq.id!)">Delete</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

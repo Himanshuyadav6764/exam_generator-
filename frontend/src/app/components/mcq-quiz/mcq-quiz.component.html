@@ -1,0 +1,172 @@
+<div class="quiz-container">
+  <!-- Start Screen -->
+  <div *ngIf="!quizStarted && !quizCompleted" class="start-screen">
+    <h1>{{ topic?.name }} Quiz</h1>
+    <div class="quiz-info">
+      <div class="info-card">
+        <span class="icon">📝</span>
+        <div>
+          <h3>{{ mcqs.length }}</h3>
+          <p>Questions</p>
+        </div>
+      </div>
+      <div class="info-card">
+        <span class="icon">⭐</span>
+        <div>
+          <h3>{{ maxScore }}</h3>
+          <p>Total Points</p>
+        </div>
+      </div>
+    </div>
+    <button class="btn btn-start" (click)="startQuiz()" [disabled]="mcqs.length === 0">
+      Start Quiz
+    </button>
+    <button class="btn btn-cancel" (click)="exitQuiz()">
+      Cancel
+    </button>
+  </div>
+
+  <!-- Quiz Screen -->
+  <div *ngIf="quizStarted && !quizCompleted" class="quiz-screen">
+    <div class="quiz-header">
+      <div class="progress-bar">
+        <div class="progress-fill" [style.width.%]="progress"></div>
+      </div>
+      <p class="progress-text">{{ currentIndex + 1 }} / {{ mcqs.length }}</p>
+    </div>
+
+    <div class="question-card">
+      <h2>Question {{ currentIndex + 1 }}</h2>
+      <p class="question-text">{{ currentMCQ.question }}</p>
+      
+      <div class="options">
+        <div *ngFor="let option of currentMCQ.options; let i = index" 
+             class="option"
+             [class.selected]="selectedAnswers[currentIndex] === i"
+             (click)="selectAnswer(i)">
+          <div class="option-marker">{{ getOptionLetter(i) }}</div>
+          <span>{{ option }}</span>
+        </div>
+      </div>
+
+      <div class="points-badge">
+        <span>⭐ {{ currentMCQ.points || 1 }} points</span>
+      </div>
+    </div>
+
+    <div class="navigation">
+      <button class="btn btn-secondary" (click)="previousQuestion()" [disabled]="currentIndex === 0">
+        ← Previous
+      </button>
+      <button *ngIf="currentIndex < mcqs.length - 1" 
+              class="btn btn-primary" 
+              (click)="nextQuestion()">
+        Next →
+      </button>
+      <button *ngIf="currentIndex === mcqs.length - 1" 
+              class="btn btn-submit" 
+              (click)="submitQuiz()">
+        Submit Quiz
+      </button>
+    </div>
+
+    <div class="question-navigator">
+      <button *ngFor="let mcq of mcqs; let i = index"
+              class="nav-btn"
+              [class.current]="i === currentIndex"
+              [class.answered]="selectedAnswers[i] !== -1"
+              (click)="goToQuestion(i)">
+        {{ i + 1 }}
+      </button>
+    </div>
+  </div>
+
+  <!-- Results Screen -->
+  <div *ngIf="quizCompleted" class="results-screen">
+    <h1>Quiz Completed!</h1>
+    
+    <div class="score-card">
+      <div class="score-circle" [class.pass]="percentage >= 60">
+        <h2>{{ totalScore }}</h2>
+        <p>out of {{ maxScore }}</p>
+      </div>
+      <h3 class="percentage">{{ percentage.toFixed(1) }}%</h3>
+      <p *ngIf="percentage >= 60" class="pass-message">🎉 Great job!</p>
+      <p *ngIf="percentage < 60" class="fail-message">Keep practicing!</p>
+    </div>
+    
+    <!-- 🎯 Adaptive Learning Recommendation -->
+    <div *ngIf="adaptiveRecommendation" class="adaptive-recommendation">
+      <div class="recommendation-header">
+        <span class="icon">💡</span>
+        <h3>Your Personalized Recommendation</h3>
+      </div>
+      <div class="recommendation-body">
+        <div class="recommendation-topic">
+          <span class="label">Next Topic:</span>
+          <span class="value">{{ adaptiveRecommendation.topic }}</span>
+        </div>
+        <div class="recommendation-difficulty">
+          <span class="label">Difficulty Level:</span>
+          <span class="value difficulty-badge" [class]="'diff-' + adaptiveRecommendation.difficulty.toLowerCase()">
+            {{ adaptiveRecommendation.difficulty }}
+          </span>
+        </div>
+        <div class="recommendation-reason">
+          <p>{{ adaptiveRecommendation.reason }}</p>
+        </div>
+        <button class="btn btn-adaptive" routerLink="/adaptive-panel" [queryParams]="{courseId: courseId}">
+          View Adaptive Progress 📊
+        </button>
+      </div>
+    </div>
+
+    <div class="results-list">
+      <div *ngFor="let mcq of mcqs; let i = index" class="result-item">
+        <div class="result-header">
+          <span class="question-num">Q{{ i + 1 }}</span>
+          <span class="result-badge" [class.correct]="validationResults[i]?.isCorrect">
+            {{ validationResults[i]?.isCorrect ? '✓ Correct' : '✗ Incorrect' }}
+          </span>
+          <span class="points">{{ validationResults[i]?.isCorrect ? mcq.points : 0 }} / {{ mcq.points }} pts</span>
+        </div>
+
+        <p class="question-text">{{ mcq.question }}</p>
+
+        <div class="answer-review">
+          <p class="your-answer">
+            <strong>Your answer:</strong> 
+            {{ selectedAnswers[i] !== -1 ? mcq.options[selectedAnswers[i]] : 'No answer' }}
+          </p>
+          <p class="correct-answer" *ngIf="!validationResults[i]?.isCorrect">
+            <strong>Correct answer:</strong> 
+            {{ validationResults[i]?.correctAnswerIndex !== undefined ? mcq.options[validationResults[i].correctAnswerIndex] : 'N/A' }}
+          </p>
+          <p class="explanation" *ngIf="mcq.explanation">
+            <strong>Explanation:</strong> {{ mcq.explanation }}
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn btn-secondary" (click)="restartQuiz()">
+        Retry Quiz
+      </button>
+      <button class="btn btn-primary" (click)="exitQuiz()">
+        Back to Topic
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading/Error States -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading...</p>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+</div>

@@ -3,6 +3,20 @@
     <div class="nav-brand">
       <h2>🎓 Student Portal</h2>
     </div>
+    <div class="nav-menu">
+      <a routerLink="/my-courses" routerLinkActive="active" class="my-courses-link">
+        📚 My Courses
+      </a>
+      <a routerLink="/search" routerLinkActive="active" class="search-link">
+        🔍 Search
+      </a>
+      <a routerLink="/analytics-dashboard" routerLinkActive="active" class="analytics-link">
+        📊 Analytics
+      </a>
+      <a routerLink="/adaptive-panel" routerLinkActive="active" class="adaptive-link">
+        🎯 Adaptive Learning
+      </a>
+    </div>
     <div class="nav-user">
       <span class="user-name">{{ fullName }}</span>
       <button class="logout-btn" (click)="logout()">Logout</button>
@@ -15,103 +29,211 @@
       <p>Your Learning Dashboard</p>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="stat-info">
-          <h3>4</h3>
-          <p>Enrolled Courses</p>
+    <!-- Published Courses Section -->
+    <div class="courses-section">
+      <div class="section-header">
+        <div>
+          <h2>Courses</h2>
+          <p class="category-subtitle" *ngIf="selectedCategory">
+            Showing {{ availableCourses.length }} courses in <strong>{{ selectedCategory }}</strong>
+            <button class="clear-filter-btn" (click)="clearFilter()">✕ Clear Filter</button>
+          </p>
+          <p class="category-subtitle" *ngIf="!selectedCategory">
+            Browse all available courses
+          </p>
+        </div>
+        <button class="view-all-btn" routerLink="/my-courses">View All</button>
+      </div>
+
+      <div class="courses-grid" *ngIf="!loadingCourses && availableCourses.length > 0">
+        <div *ngFor="let course of availableCourses.slice(0, 6)" class="course-card-modern">
+          <div class="course-badge-container">
+            <span class="live-badge" *ngIf="course.status === 'PUBLISHED'">●  LIVE</span>
+            <span class="level-badge">{{ course.difficulty || 'BEGINNER' }}</span>
+          </div>
+          
+          <div class="course-thumbnail-modern" [style.background]="getCourseGradient(course.subjects)">
+            <div class="course-icon-large">{{ getCourseEmoji(course.subjects) }}</div>
+            <h3 class="course-title-overlay">{{ course.title }}</h3>
+          </div>
+
+          <div class="course-info-modern">
+            <div class="course-meta-row">
+              <span class="meta-icon">👤</span>
+              <span class="meta-text">{{ course.instructorName || 'Instructor' }}</span>
+            </div>
+            <div class="course-meta-row">
+              <span class="meta-icon">📚</span>
+              <span class="meta-text">{{ course.topics?.length || 0 }} modules/{{ course.videosCount || 0 }} hrs</span>
+            </div>
+            <div class="course-meta-row">
+              <span class="meta-icon">⭐</span>
+              <span class="meta-text">{{ getCourseLabel(course.subjects) }}</span>
+            </div>
+          </div>
+
+          <div class="course-actions-modern">
+            <button class="enroll-btn-modern" (click)="viewRecommendedCourse(course.id)">
+              Enroll now →
+            </button>
+          </div>
         </div>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">✅</div>
-        <div class="stat-info">
-          <h3>12</h3>
-          <p>Completed Lessons</p>
-        </div>
+      <div *ngIf="loadingCourses" class="loading-courses">
+        <div class="spinner"></div>
+        <p>Loading courses...</p>
       </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">⏱️</div>
-        <div class="stat-info">
-          <h3>24h</h3>
-          <p>Learning Time</p>
-        </div>
+      <div *ngIf="!loadingCourses && availableCourses.length === 0" class="no-courses">
+        <div class="no-courses-icon">🔍</div>
+        <h3>No courses found</h3>
+        <p *ngIf="selectedCategory">No courses available in {{ selectedCategory }} category</p>
+        <p *ngIf="!selectedCategory">No courses available at the moment</p>
+        <button *ngIf="selectedCategory" class="clear-filter-btn-large" (click)="clearFilter()">
+          Clear Filter & Show All Courses
+        </button>
       </div>
+    </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">🏆</div>
-        <div class="stat-info">
-          <h3>85%</h3>
-          <p>Average Score</p>
+    <!-- Must Explore Section -->
+    <div class="must-explore-section">
+      <h2 class="section-title">Must Explore</h2>
+      <div class="explore-cards-row">
+        <div class="explore-card purple-gradient">
+          <span>Jobs for you</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="explore-card purple-gradient">
+          <span>Hire with us</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="explore-card purple-gradient">
+          <span>Advertise with Us</span>
+          <span class="arrow">→</span>
+        </div>
+        <div class="explore-card purple-gradient">
+          <span>Placement Training...</span>
+          <span class="arrow">→</span>
         </div>
       </div>
     </div>
 
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">📖</div>
-        <h3>My Courses</h3>
-        <p>Access your enrolled courses and continue learning</p>
-        <button class="feature-btn">View Courses</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📝</div>
-        <h3>Assignments</h3>
-        <p>View and submit your assignments</p>
-        <button class="feature-btn">View Assignments</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Progress</h3>
-        <p>Track your learning progress and achievements</p>
-        <button class="feature-btn">View Progress</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">🎯</div>
-        <h3>Grades</h3>
-        <p>Check your grades and performance</p>
-        <button class="feature-btn">View Grades</button>
+    <!-- Explore by Category Section -->
+    <div class="explore-categories-section">
+      <h2 class="section-title">Explore</h2>
+      <div class="categories-grid">
+        <div class="category-card blue-card" 
+             [class.selected]="selectedCategory === 'Data Structures'"
+             (click)="filterByCategory('Data Structures')">
+          <h3>Data Structure and Algorithms</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card red-card" 
+             [class.selected]="selectedCategory === 'Web Development'"
+             (click)="filterByCategory('Web Development')">
+          <h3>Web Development</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card green-card" 
+             [class.selected]="selectedCategory === 'AI ML & Data Science'"
+             (click)="filterByCategory('AI ML & Data Science')">
+          <h3>AI ML & Data Science</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card purple-card" 
+             [class.selected]="selectedCategory === 'Machine Learning'"
+             (click)="filterByCategory('Machine Learning')">
+          <h3>Machine Learning</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card orange-card" 
+             [class.selected]="selectedCategory === 'Python'"
+             (click)="filterByCategory('Python')">
+          <h3>Python</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card pink-card" 
+             [class.selected]="selectedCategory === 'Java'"
+             (click)="filterByCategory('Java')">
+          <h3>Java</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card teal-card" 
+             [class.selected]="selectedCategory === 'System Design'"
+             (click)="filterByCategory('System Design')">
+          <h3>System Design</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
+        <div class="category-card yellow-card" 
+             [class.selected]="selectedCategory === 'DevOps'"
+             (click)="filterByCategory('DevOps')">
+          <h3>DevOps</h3>
+          <button class="view-more-btn">View more →</button>
+        </div>
       </div>
     </div>
 
-    <div class="recent-courses">
-      <h2>Recent Courses</h2>
-      <div class="courses-list">
-        <div class="course-item">
-          <div class="course-header">
-            <h4>Java Programming</h4>
-            <span class="progress-badge">60% Complete</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: 60%"></div>
-          </div>
-        </div>
+    <!-- Recommended Courses Section -->
+    <div *ngIf="recommendedCourses && recommendedCourses.length > 0" class="recommended-courses-section">
+      <div class="section-header">
+        <h2>⭐ Recommended Courses for You</h2>
+        <p class="text-muted">Courses you've added to your learning list</p>
+      </div>
 
-        <div class="course-item">
-          <div class="course-header">
-            <h4>Spring Boot Masterclass</h4>
-            <span class="progress-badge">30% Complete</span>
+      <div class="recommended-grid">
+        <div *ngFor="let course of recommendedCourses" class="recommended-card">
+          <div class="recommended-thumbnail">
+            <img *ngIf="course.thumbnailUrl" 
+                 [src]="course.thumbnailUrl" 
+                 [alt]="course.title"
+                 (error)="$any($event.target).style.display='none'">
+            <div *ngIf="!course.thumbnailUrl" class="thumbnail-placeholder">📚</div>
+            <span class="difficulty-badge" 
+                  [class.difficulty-beginner]="course.difficulty === 'BEGINNER'"
+                  [class.difficulty-intermediate]="course.difficulty === 'INTERMEDIATE'"
+                  [class.difficulty-advanced]="course.difficulty === 'ADVANCED'">
+              {{ course.difficulty || 'BEGINNER' }}
+            </span>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: 30%"></div>
-          </div>
-        </div>
 
-        <div class="course-item">
-          <div class="course-header">
-            <h4>Angular Development</h4>
-            <span class="progress-badge">45% Complete</span>
+          <div class="recommended-content">
+            <h3 class="recommended-title">{{ course.title }}</h3>
+            <p class="recommended-description">{{ course.description || 'No description available' }}</p>
+            
+            <div class="recommended-meta">
+              <div class="meta-item">
+                <span class="icon">👨‍🏫</span>
+                <span>{{ course.instructorName || course.instructorEmail }}</span>
+              </div>
+              <div class="meta-item">
+                <span class="icon">📑</span>
+                <span>{{ course.topics?.length || 0 }} Topics</span>
+              </div>
+            </div>
+
+            <div *ngIf="course.subjects && course.subjects.length > 0" class="course-subjects">
+              <span *ngFor="let subject of course.subjects" class="subject-tag">
+                {{ subject }}
+              </span>
+            </div>
           </div>
-          <div class="progress-bar">
-            <div class="progress-fill" style="width: 45%"></div>
+
+          <div class="recommended-footer">
+            <button class="view-course-btn" (click)="viewRecommendedCourse(course.id)">
+              <i class="fas fa-eye"></i> View Course
+            </button>
           </div>
         </div>
       </div>
     </div>
   </div>
 </div>
+
+<!-- Course Details Modal -->
+<app-course-details-modal 
+  *ngIf="showDetailsModal"
+  [courseId]="selectedCourseId"
+  [isVisible]="showDetailsModal"
+  (close)="closeDetailsModal()">
+</app-course-details-modal>

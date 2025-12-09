@@ -1,0 +1,34 @@
+[
+    {
+        "topic": "Mathematics",
+        "description": "The study of numbers, shapes, and patterns."
+    },
+    {
+        "topic": "Science",
+        "description": "The systematic study of the structure and behavior of the physical and natural world."
+    },
+    {
+        "topic": "History",
+        "description": "The study of past events, particularly in human affairs."
+    },
+    {
+        "topic": "Geography",
+        "description": "The study of places and the relationships between people and their environments."
+    },
+    {
+        "topic": "Literature",
+        "description": "The body of written works, including poetry, prose, and drama."
+    },
+    {
+        "topic": "Computer Science",
+        "description": "The study of computers and computational systems."
+    },
+    {
+        "topic": "Art",
+        "description": "The expression or application of human creative skill and imagination."
+    },
+    {
+        "topic": "Music",
+        "description": "The art of arranging sounds in time to produce a composition."
+    }
+]

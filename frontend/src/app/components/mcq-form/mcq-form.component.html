@@ -1,0 +1,179 @@
+<div class="form-container">
+  <div class="form-header">
+    <h1>{{ isEditMode ? 'Edit MCQ' : 'Create MCQ' }}</h1>
+    <p class="subtitle">{{ isEditMode ? 'Update MCQ information' : 'Add a new multiple choice question' }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ isEditMode ? 'Saving MCQ...' : 'Creating MCQ...' }}</p>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    <span class="icon">✅</span>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <form [formGroup]="mcqForm" (ngSubmit)="onSubmit()" *ngIf="!loading && !successMessage">
+    <!-- Question -->
+    <div class="form-group">
+      <label for="question">Question <span class="required">*</span></label>
+      <textarea 
+        id="question" 
+        formControlName="question" 
+        rows="4" 
+        placeholder="Enter your multiple choice question"
+        [class.invalid]="question?.invalid && question?.touched"></textarea>
+      <div class="error-text" *ngIf="question?.invalid && question?.touched">
+        <span *ngIf="question?.errors?.['required']">Question is required</span>
+        <span *ngIf="question?.errors?.['minlength']">Question must be at least 10 characters</span>
+        <span *ngIf="question?.errors?.['maxlength']">Question cannot exceed 500 characters</span>
+      </div>
+    </div>
+
+    <!-- Subject Selection -->
+    <div class="form-group">
+      <label for="subjectId">Subject <span class="required">*</span></label>
+      <select 
+        id="subjectId" 
+        formControlName="subjectId"
+        [class.invalid]="subjectId?.invalid && subjectId?.touched">
+        <option value="">Select a subject</option>
+        <option *ngFor="let subject of subjects" [value]="subject.id">
+          {{ subject.title }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Topic Selection -->
+    <div class="form-group">
+      <label for="topicId">Topic <span class="required">*</span></label>
+      <select 
+        id="topicId" 
+        formControlName="topicId"
+        [class.invalid]="topicId?.invalid && topicId?.touched"
+        [disabled]="filteredTopics.length === 0">
+        <option value="">Select a topic</option>
+        <option *ngFor="let topic of filteredTopics" [value]="topic.id">
+          {{ topic.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Options -->
+    <div class="options-section">
+      <h3>Answer Options <span class="required">*</span></h3>
+      
+      <div class="option-group">
+        <div class="option-header">
+          <label for="option1">Option 1</label>
+          <label class="radio-label">
+            <input type="radio" formControlName="correctAnswerIndex" value="0">
+            <span>Correct Answer</span>
+          </label>
+        </div>
+        <input 
+          type="text" 
+          id="option1" 
+          formControlName="option1" 
+          placeholder="Enter option 1"
+          [class.invalid]="option1?.invalid && option1?.touched">
+      </div>
+
+      <div class="option-group">
+        <div class="option-header">
+          <label for="option2">Option 2</label>
+          <label class="radio-label">
+            <input type="radio" formControlName="correctAnswerIndex" value="1">
+            <span>Correct Answer</span>
+          </label>
+        </div>
+        <input 
+          type="text" 
+          id="option2" 
+          formControlName="option2" 
+          placeholder="Enter option 2"
+          [class.invalid]="option2?.invalid && option2?.touched">
+      </div>
+
+      <div class="option-group">
+        <div class="option-header">
+          <label for="option3">Option 3</label>
+          <label class="radio-label">
+            <input type="radio" formControlName="correctAnswerIndex" value="2">
+            <span>Correct Answer</span>
+          </label>
+        </div>
+        <input 
+          type="text" 
+          id="option3" 
+          formControlName="option3" 
+          placeholder="Enter option 3"
+          [class.invalid]="option3?.invalid && option3?.touched">
+      </div>
+
+      <div class="option-group">
+        <div class="option-header">
+          <label for="option4">Option 4</label>
+          <label class="radio-label">
+            <input type="radio" formControlName="correctAnswerIndex" value="3">
+            <span>Correct Answer</span>
+          </label>
+        </div>
+        <input 
+          type="text" 
+          id="option4" 
+          formControlName="option4" 
+          placeholder="Enter option 4"
+          [class.invalid]="option4?.invalid && option4?.touched">
+      </div>
+
+      <div class="error-text" *ngIf="correctAnswerIndex?.invalid && correctAnswerIndex?.touched">
+        Please select the correct answer
+      </div>
+    </div>
+
+    <!-- Points -->
+    <div class="form-group">
+      <label for="points">Points <span class="required">*</span></label>
+      <input 
+        type="number" 
+        id="points" 
+        formControlName="points" 
+        placeholder="e.g., 10"
+        min="1"
+        max="100"
+        [class.invalid]="points?.invalid && points?.touched">
+      <div class="error-text" *ngIf="points?.invalid && points?.touched">
+        <span *ngIf="points?.errors?.['required']">Points are required</span>
+        <span *ngIf="points?.errors?.['min']">Points must be at least 1</span>
+        <span *ngIf="points?.errors?.['max']">Points cannot exceed 100</span>
+      </div>
+    </div>
+
+    <!-- Explanation -->
+    <div class="form-group">
+      <label for="explanation">Explanation (Optional)</label>
+      <textarea 
+        id="explanation" 
+        formControlName="explanation" 
+        rows="4" 
+        placeholder="Explain why this is the correct answer"></textarea>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-cancel" (click)="cancel()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-submit" [disabled]="mcqForm.invalid">
+        {{ isEditMode ? 'Update MCQ' : 'Create MCQ' }}
+      </button>
+    </div>
+  </form>
+</div>

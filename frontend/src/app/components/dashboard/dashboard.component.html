@@ -1,0 +1,191 @@
+<div class="dashboard-container">
+  <div class="dashboard-header">
+    <h1>📊 Dashboard</h1>
+    <p class="subtitle">Platform Overview & Statistics</p>
+  </div>
+
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading statistics...</p>
+  </div>
+
+  <div *ngIf="errorMessage" class="error-message">
+    ⚠️ {{ errorMessage }}
+    <button class="btn-retry" (click)="loadStats()">Retry</button>
+  </div>
+
+  <div *ngIf="stats && !isLoading" class="dashboard-content">
+    
+    <!-- Overall Stats -->
+    <section class="stats-section">
+      <h2>📈 Overall Statistics</h2>
+      <div class="stats-grid">
+        <div class="stat-card subjects">
+          <div class="stat-icon">📚</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalSubjects }}</div>
+            <div class="stat-label">Total Subjects</div>
+          </div>
+        </div>
+
+        <div class="stat-card topics">
+          <div class="stat-icon">📖</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalTopics }}</div>
+            <div class="stat-label">Total Topics</div>
+          </div>
+        </div>
+
+        <div class="stat-card videos">
+          <div class="stat-icon">🎥</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalVideos }}</div>
+            <div class="stat-label">Video Lectures</div>
+          </div>
+        </div>
+
+        <div class="stat-card pdfs">
+          <div class="stat-icon">📄</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalPDFs }}</div>
+            <div class="stat-label">PDF Materials</div>
+          </div>
+        </div>
+
+        <div class="stat-card mcqs">
+          <div class="stat-icon">❓</div>
+          <div class="stat-info">
+            <div class="stat-value">{{ stats.totalMCQs }}</div>
+            <div class="stat-label">Practice Questions</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- By Difficulty -->
+    <section class="difficulty-section">
+      <h2>🎯 Content by Difficulty Level</h2>
+      <div class="difficulty-grid">
+        
+        <!-- Beginner -->
+        <div class="difficulty-card beginner">
+          <div class="difficulty-header">
+            <span class="difficulty-icon">🌱</span>
+            <h3>BEGINNER</h3>
+          </div>
+          <div class="difficulty-stats">
+            <div class="diff-stat">
+              <span class="label">Subjects:</span>
+              <span class="value">{{ stats.byDifficulty.BEGINNER.subjects }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Topics:</span>
+              <span class="value">{{ stats.byDifficulty.BEGINNER.topics }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Videos:</span>
+              <span class="value">{{ stats.byDifficulty.BEGINNER.videos }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">PDFs:</span>
+              <span class="value">{{ stats.byDifficulty.BEGINNER.pdfs }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">MCQs:</span>
+              <span class="value">{{ stats.byDifficulty.BEGINNER.mcqs }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Intermediate -->
+        <div class="difficulty-card intermediate">
+          <div class="difficulty-header">
+            <span class="difficulty-icon">🔥</span>
+            <h3>INTERMEDIATE</h3>
+          </div>
+          <div class="difficulty-stats">
+            <div class="diff-stat">
+              <span class="label">Subjects:</span>
+              <span class="value">{{ stats.byDifficulty.INTERMEDIATE.subjects }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Topics:</span>
+              <span class="value">{{ stats.byDifficulty.INTERMEDIATE.topics }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Videos:</span>
+              <span class="value">{{ stats.byDifficulty.INTERMEDIATE.videos }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">PDFs:</span>
+              <span class="value">{{ stats.byDifficulty.INTERMEDIATE.pdfs }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">MCQs:</span>
+              <span class="value">{{ stats.byDifficulty.INTERMEDIATE.mcqs }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Advanced -->
+        <div class="difficulty-card advanced">
+          <div class="difficulty-header">
+            <span class="difficulty-icon">⚡</span>
+            <h3>ADVANCED</h3>
+          </div>
+          <div class="difficulty-stats">
+            <div class="diff-stat">
+              <span class="label">Subjects:</span>
+              <span class="value">{{ stats.byDifficulty.ADVANCED.subjects }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Topics:</span>
+              <span class="value">{{ stats.byDifficulty.ADVANCED.topics }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">Videos:</span>
+              <span class="value">{{ stats.byDifficulty.ADVANCED.videos }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">PDFs:</span>
+              <span class="value">{{ stats.byDifficulty.ADVANCED.pdfs }}</span>
+            </div>
+            <div class="diff-stat">
+              <span class="label">MCQs:</span>
+              <span class="value">{{ stats.byDifficulty.ADVANCED.mcqs }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Subject Status -->
+    <section class="status-section">
+      <h2>📋 Subject Status</h2>
+      <div class="status-grid">
+        <div class="status-card published">
+          <div class="status-icon">✅</div>
+          <div class="status-info">
+            <div class="status-value">{{ stats.subjectsByStatus.PUBLISHED }}</div>
+            <div class="status-label">Published</div>
+            <div class="status-percentage">
+              {{ getPercentage(stats.subjectsByStatus.PUBLISHED, stats.totalSubjects) }}%
+            </div>
+          </div>
+        </div>
+
+        <div class="status-card draft">
+          <div class="status-icon">📝</div>
+          <div class="status-info">
+            <div class="status-value">{{ stats.subjectsByStatus.DRAFT }}</div>
+            <div class="status-label">Draft</div>
+            <div class="status-percentage">
+              {{ getPercentage(stats.subjectsByStatus.DRAFT, stats.totalSubjects) }}%
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </div>
+</div>

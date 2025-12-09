@@ -1,0 +1,287 @@
+<div class="analytics-container">
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading Analytics...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading" class="analytics-content">
+    
+    <!-- Header Section -->
+    <div class="analytics-header">
+      <div class="header-left">
+        <h1 class="page-title">
+          <span class="icon">📊</span>
+          Analytics & Adaptive Report
+        </h1>
+        <p class="page-subtitle">Track your learning progress and performance insights</p>
+      </div>
+      <div class="header-right">
+        <div class="level-badge" [ngClass]="getLevelBadgeClass(currentLevel)">
+          <span class="badge-icon">🎯</span>
+          <span class="badge-text">{{ currentLevel }}</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-cards">
+      <div class="summary-card card-gradient-1">
+        <div class="card-icon">📈</div>
+        <div class="card-content">
+          <h3 class="card-value">{{ overallScore }}%</h3>
+          <p class="card-label">Overall Score</p>
+        </div>
+      </div>
+
+      <div class="summary-card card-gradient-2">
+        <div class="card-icon">📝</div>
+        <div class="card-content">
+          <h3 class="card-value">{{ totalQuizzes }}</h3>
+          <p class="card-label">Quizzes Completed</p>
+        </div>
+      </div>
+
+      <div class="summary-card card-gradient-3">
+        <div class="card-icon">🎯</div>
+        <div class="card-content">
+          <h3 class="card-value">{{ averageAccuracy }}%</h3>
+          <p class="card-label">Average Accuracy</p>
+        </div>
+      </div>
+
+      <div class="summary-card card-gradient-4">
+        <div class="card-icon">📚</div>
+        <div class="card-content">
+          <h3 class="card-value">{{ topicPerformance.length }}</h3>
+          <p class="card-label">Topics Studied</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Main Grid Layout -->
+    <div class="dashboard-grid">
+      
+      <!-- Topic Performance Chart -->
+      <div class="chart-card glass-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="title-icon">🥧</span>
+            Topic-Wise Performance
+          </h2>
+          <span class="info-badge">Distribution by Score</span>
+        </div>
+        
+        <!-- Show chart only if data exists -->
+        <div *ngIf="topicPerformance.length > 0" class="chart-container">
+          <canvas id="topicPieChart"></canvas>
+        </div>
+        
+        <!-- Empty state when no data -->
+        <div *ngIf="topicPerformance.length === 0" class="empty-chart-state">
+          <div class="empty-icon">📊</div>
+          <h3>No Performance Data Yet</h3>
+          <p>Complete quizzes to see your topic-wise performance!</p>
+        </div>
+      </div>
+
+      <!-- Skill Progression Chart -->
+      <div class="chart-card glass-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="title-icon">📈</span>
+            Skill Progression Trend
+          </h2>
+          <span class="info-badge">Based on Quiz Performance</span>
+        </div>
+        
+        <!-- Show chart only if data exists -->
+        <div *ngIf="skillProgression.length > 0" class="chart-container">
+          <canvas id="skillLineChart"></canvas>
+        </div>
+        
+        <!-- Empty state when no data -->
+        <div *ngIf="skillProgression.length === 0" class="empty-chart-state">
+          <div class="empty-icon">📊</div>
+          <h3>No Progression Data Yet</h3>
+          <p>Take quizzes to track your skill progression over time</p>
+        </div>
+        
+        <div class="progression-legend" *ngIf="skillProgression.length > 0">
+          <div class="legend-item">
+            <span class="legend-dot beginner"></span>
+            <span>Beginner (0-50%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot intermediate"></span>
+            <span>Intermediate (51-75%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot advanced"></span>
+            <span>Advanced (76-90%)</span>
+          </div>
+          <div class="legend-item">
+            <span class="legend-dot mastery"></span>
+            <span>Mastery (91-100%)</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Strength & Weakness Analysis -->
+      <div class="analysis-card glass-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="title-icon">💪</span>
+            Strength & Weakness Analysis
+          </h2>
+          <span class="info-badge">Instructor Insights</span>
+        </div>
+        
+        <div class="analysis-content">
+          <!-- Strong Topics -->
+          <div class="analysis-section">
+            <div class="section-header success">
+              <span class="section-icon">✅</span>
+              <h3>Strong Topics</h3>
+            </div>
+            <div class="topic-list">
+              <div class="topic-item success-item" *ngFor="let topic of strongTopics">
+                <span class="topic-bullet">●</span>
+                <span>{{ topic }}</span>
+              </div>
+              <div class="topic-item empty-state" *ngIf="strongTopics.length === 0">
+                <span>Keep practicing to build strengths!</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Weak Topics -->
+          <div class="analysis-section">
+            <div class="section-header warning">
+              <span class="section-icon">⚠️</span>
+              <h3>Topics Needing Improvement</h3>
+            </div>
+            <div class="topic-list">
+              <div class="topic-item warning-item" *ngFor="let topic of weakTopics">
+                <span class="topic-bullet">●</span>
+                <span>{{ topic }}</span>
+              </div>
+              <div class="topic-item empty-state" *ngIf="weakTopics.length === 0">
+                <span>Great! No weak areas identified.</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Recommended Topics -->
+          <div class="analysis-section">
+            <div class="section-header info">
+              <span class="section-icon">💡</span>
+              <h3>Recommended Focus Areas</h3>
+            </div>
+            <div class="topic-list">
+              <div class="topic-item info-item" *ngFor="let topic of recommendedTopics">
+                <span class="topic-bullet">→</span>
+                <span>{{ topic }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Improvement Tips -->
+          <div class="analysis-section">
+            <div class="section-header primary">
+              <span class="section-icon">🎓</span>
+              <h3>Improvement Tips</h3>
+            </div>
+            <div class="tips-list">
+              <div class="tip-item" *ngFor="let tip of improvementTips">
+                <span>{{ tip }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quiz Performance Table -->
+      <div class="table-card glass-card">
+        <div class="card-header">
+          <h2 class="card-title">
+            <span class="title-icon">📊</span>
+            Student vs Quiz Score Comparison
+          </h2>
+          <span class="info-badge">Recent Performance</span>
+        </div>
+
+        <div class="table-container">
+          <table class="performance-table" *ngIf="quizPerformance.length > 0">
+            <thead>
+              <tr>
+                <th>Quiz Name</th>
+                <th>Score</th>
+                <th>Accuracy</th>
+                <th>Time Taken</th>
+                <th>Difficulty</th>
+                <th>Rank</th>
+                <th>Date</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let quiz of quizPerformance; let i = index" 
+                  class="table-row"
+                  [class.row-highlight]="i === 0">
+                <td class="quiz-name">
+                  <span class="quiz-icon">📝</span>
+                  {{ quiz.quizName }}
+                </td>
+                <td class="score-cell">
+                  <div class="score-badge" 
+                       [class.score-high]="quiz.accuracy >= 80"
+                       [class.score-medium]="quiz.accuracy >= 60 && quiz.accuracy < 80"
+                       [class.score-low]="quiz.accuracy < 60">
+                    {{ quiz.score }}
+                  </div>
+                </td>
+                <td class="accuracy-cell">
+                  <div class="accuracy-bar">
+                    <div class="accuracy-fill" 
+                         [style.width.%]="quiz.accuracy"
+                         [class.fill-high]="quiz.accuracy >= 80"
+                         [class.fill-medium]="quiz.accuracy >= 60 && quiz.accuracy < 80"
+                         [class.fill-low]="quiz.accuracy < 60">
+                    </div>
+                    <span class="accuracy-text">{{ quiz.accuracy }}%</span>
+                  </div>
+                </td>
+                <td class="time-cell">
+                  <span class="time-badge">⏱️ {{ quiz.timeTaken }}</span>
+                </td>
+                <td class="difficulty-cell">
+                  <span class="difficulty-badge" [ngClass]="getDifficultyClass(quiz.difficulty)">
+                    {{ quiz.difficulty }}
+                  </span>
+                </td>
+                <td class="rank-cell">
+                  <span class="rank-badge" [ngClass]="getRankClass(quiz.rank)" *ngIf="quiz.rank">
+                    #{{ quiz.rank }}
+                  </span>
+                  <span *ngIf="!quiz.rank">-</span>
+                </td>
+                <td class="date-cell">
+                  {{ quiz.date | date: 'MMM d, y' }}
+                </td>
+              </tr>
+            </tbody>
+          </table>
+
+          <div class="no-data-state" *ngIf="quizPerformance.length === 0">
+            <div class="no-data-icon">📝</div>
+            <h3>No Quiz Data Available</h3>
+            <p>Start taking quizzes to see your performance metrics here!</p>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+</div>

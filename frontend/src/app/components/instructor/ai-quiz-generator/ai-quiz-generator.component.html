@@ -1,0 +1,265 @@
+<div class="ai-quiz-generator">
+  <div class="header">
+    <h2>🤖 AI Quiz Generator</h2>
+    <p class="subtitle">Powered by OpenAI GPT</p>
+  </div>
+
+  <!-- Messages -->
+  <div class="alert alert-success" *ngIf="successMessage">
+    {{ successMessage }}
+  </div>
+  <div class="alert alert-error" *ngIf="errorMessage">
+    {{ errorMessage }}
+  </div>
+
+  <!-- Generation Form -->
+  <div class="generation-section" *ngIf="!editMode">
+    <div class="form-card">
+      <h3>Generate New Quiz</h3>
+
+      <div class="form-group">
+        <label for="topic">Topic *</label>
+        <input
+          id="topic"
+          type="text"
+          [(ngModel)]="topic"
+          placeholder="e.g., JavaScript Promises, Machine Learning Basics"
+          class="form-control"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="numberOfQuestions">Number of Questions *</label>
+        <input
+          id="numberOfQuestions"
+          type="number"
+          [(ngModel)]="numberOfQuestions"
+          min="3"
+          max="50"
+          class="form-control"
+        />
+        <small>Between 3 and 50 questions</small>
+      </div>
+
+      <div class="form-group">
+        <label for="apiKey">OpenAI API Key (Optional)</label>
+        <input
+          id="apiKey"
+          type="password"
+          [(ngModel)]="apiKey"
+          placeholder="Leave blank to use server default"
+          class="form-control"
+        />
+        <small>Override the server's API key if needed</small>
+      </div>
+
+      <button
+        class="btn btn-primary"
+        (click)="generateQuiz()"
+        [disabled]="loading || !topic"
+      >
+        <span *ngIf="!loading">✨ Generate Quiz</span>
+        <span *ngIf="loading">🔄 Generating...</span>
+      </button>
+
+      <button
+        class="btn btn-secondary"
+        (click)="toggleSavedQuizzes()"
+        style="margin-left: 10px"
+      >
+        📚 {{ showSavedQuizzes ? 'Hide' : 'Show' }} Saved Quizzes
+      </button>
+    </div>
+
+    <!-- Saved Quizzes List -->
+    <div class="saved-quizzes" *ngIf="showSavedQuizzes">
+      <h3>Saved Quizzes</h3>
+      <div class="quiz-list" *ngIf="savedQuizzes.length > 0">
+        <div class="quiz-card" *ngFor="let quiz of savedQuizzes">
+          <div class="quiz-header">
+            <h4>{{ quiz.title }}</h4>
+            <span class="badge" [class.published]="quiz.published">
+              {{ quiz.published ? '✓ Published' : '⏸ Draft' }}
+            </span>
+          </div>
+          <p class="quiz-info">
+            <strong>Topic:</strong> {{ quiz.topicName }} |
+            <strong>Questions:</strong> {{ quiz.questions?.length || 0 }} |
+            <strong>Duration:</strong> {{ quiz.duration }} min
+          </p>
+          <div class="quiz-actions">
+            <button class="btn-small btn-danger" (click)="deleteQuiz(quiz.id!)">
+              🗑 Delete
+            </button>
+          </div>
+        </div>
+      </div>
+      <p *ngIf="savedQuizzes.length === 0" class="empty-state">
+        No saved quizzes yet. Generate your first quiz!
+      </p>
+    </div>
+  </div>
+
+  <!-- Quiz Editor -->
+  <div class="editor-section" *ngIf="editMode && generatedQuiz">
+    <div class="editor-header">
+      <h3>Review & Edit Quiz</h3>
+      <div class="editor-actions">
+        <button class="btn btn-success" (click)="saveQuiz()" [disabled]="loading">
+          💾 Save Quiz
+        </button>
+        <button class="btn btn-danger" (click)="discardQuiz()">
+          ❌ Discard
+        </button>
+      </div>
+    </div>
+
+    <!-- Quiz Metadata -->
+    <div class="metadata-card">
+      <div class="form-group">
+        <label for="testTitle">Quiz Title *</label>
+        <input
+          id="testTitle"
+          type="text"
+          [(ngModel)]="testTitle"
+          placeholder="e.g., JavaScript Quiz - Week 3"
+          class="form-control"
+        />
+      </div>
+
+      <div class="form-group">
+        <label for="testDescription">Description (Optional)</label>
+        <textarea
+          id="testDescription"
+          [(ngModel)]="testDescription"
+          placeholder="Brief description of this quiz"
+          class="form-control"
+          rows="2"
+        ></textarea>
+      </div>
+
+      <div class="form-group">
+        <label for="duration">Duration (minutes) *</label>
+        <input
+          id="duration"
+          type="number"
+          [(ngModel)]="duration"
+          min="5"
+          max="180"
+          class="form-control"
+        />
+      </div>
+    </div>
+
+    <!-- Questions List -->
+    <div class="questions-container">
+      <h4>Questions ({{ generatedQuiz.questions.length }})</h4>
+
+      <div
+        class="question-card"
+        *ngFor="let question of generatedQuiz.questions; let i = index"
+      >
+        <div class="question-header">
+          <span class="question-number">Q{{ i + 1 }}</span>
+          <span class="question-type" [ngClass]="question.type">
+            {{ question.type === 'mcq' ? '📝 MCQ' : question.type === 'true-false' ? '✓/✗ True/False' : '✍ Short Answer' }}
+          </span>
+        </div>
+
+        <!-- Question Text -->
+        <div class="form-group">
+          <label>Question Text</label>
+          <textarea
+            [(ngModel)]="question.question"
+            class="form-control"
+            rows="2"
+          ></textarea>
+        </div>
+
+        <!-- MCQ Options -->
+        <div *ngIf="question.type === 'mcq'" class="options-container">
+          <label>Options</label>
+          <div
+            class="option-item"
+            *ngFor="let option of question.options; let j = index"
+          >
+            <input
+              type="radio"
+              [name]="'correct-' + i"
+              [checked]="question.correctOption === j"
+              (change)="updateQuestion(i, 'correctOption', j)"
+            />
+            <input
+              type="text"
+              [(ngModel)]="question.options![j]"
+              class="form-control option-input"
+              placeholder="Option {{ j + 1 }}"
+            />
+          </div>
+        </div>
+
+        <!-- True/False -->
+        <div *ngIf="question.type === 'true-false'" class="true-false-container">
+          <label>Correct Answer</label>
+          <div class="radio-group">
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="answer-{{ i }}"
+                value="true"
+                [checked]="question.correctAnswer === true"
+                (change)="updateQuestion(i, 'correctAnswer', true)"
+              />
+              True
+            </label>
+            <label class="radio-label">
+              <input
+                type="radio"
+                name="answer-{{ i }}"
+                value="false"
+                [checked]="question.correctAnswer === false"
+                (change)="updateQuestion(i, 'correctAnswer', false)"
+              />
+              False
+            </label>
+          </div>
+        </div>
+
+        <!-- Short Answer Keywords -->
+        <div *ngIf="question.type === 'short-answer'" class="keywords-container">
+          <label>Keywords (comma-separated)</label>
+          <input
+            type="text"
+            [(ngModel)]="question.keywords"
+            class="form-control"
+            placeholder="e.g., promise, async, await"
+          />
+          <small>Students' answers will be evaluated based on these keywords</small>
+        </div>
+
+        <!-- Marks/Points -->
+        <div class="form-group">
+          <label>Marks</label>
+          <input
+            type="number"
+            [(ngModel)]="question.marks"
+            min="1"
+            max="10"
+            class="form-control points-input"
+          />
+        </div>
+      </div>
+    </div>
+
+    <!-- Save Actions -->
+    <div class="save-actions">
+      <button class="btn btn-success" (click)="saveQuiz()" [disabled]="loading">
+        <span *ngIf="!loading">💾 Save Quiz</span>
+        <span *ngIf="loading">💾 Saving...</span>
+      </button>
+      <button class="btn btn-secondary" (click)="discardQuiz()">
+        ❌ Discard Changes
+      </button>
+    </div>
+  </div>
+</div>

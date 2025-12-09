@@ -1,0 +1,455 @@
+<div class="course-management-container">
+  <div class="header">
+    <h2>My Courses</h2>
+    <button class="btn btn-primary" (click)="createCourse()">Create New Course</button>
+  </div>
+
+  <div class="alert alert-success" *ngIf="message">{{message}}</div>
+  <div class="alert alert-danger" *ngIf="errorMessage">{{errorMessage}}</div>
+
+  <div class="filters">
+    <div class="search-box">
+      <input 
+        type="text" 
+        [(ngModel)]="searchTerm" 
+        (ngModelChange)="onSearchChange()"
+        placeholder="Search courses..."
+        class="form-control">
+    </div>
+    <div class="filter-buttons">
+      <button 
+        class="filter-btn" 
+        [class.active]="filterStatus === 'ALL'"
+        (click)="filterStatus = 'ALL'; onFilterChange()">
+        All
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="filterStatus === 'DRAFT'"
+        (click)="filterStatus = 'DRAFT'; onFilterChange()">
+        Draft
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="filterStatus === 'PUBLISHED'"
+        (click)="filterStatus = 'PUBLISHED'; onFilterChange()">
+        Published
+      </button>
+      <button 
+        class="filter-btn" 
+        [class.active]="filterStatus === 'ARCHIVED'"
+        (click)="filterStatus = 'ARCHIVED'; onFilterChange()">
+        Archived
+      </button>
+    </div>
+  </div>
+
+  <div class="courses-table">
+    <table>
+      <thead>
+        <tr>
+          <th>Course Title</th>
+          <th>Status</th>
+          <th>Difficulty</th>
+          <th>Students</th>
+          <th>Rating</th>
+          <th>Created</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let course of filteredCourses">
+          <td>
+            <div class="course-cell">
+              <img [src]="course.thumbnail || 'assets/default-course.png'" alt="Course thumbnail" class="course-thumbnail">
+              <div class="course-info">
+                <strong>{{course.title}}</strong>
+                <div class="course-subjects">
+                  <span class="subject-tag" *ngFor="let topic of course.subjects?.slice(0, 3)">{{topic}}</span>
+                </div>
+              </div>
+            </div>
+          </td>
+          <td>
+            <span class="badge badge-clickable" 
+                  [ngClass]="getStatusBadgeClass(course.status)"
+                  (click)="viewCourseDetails(course)"
+                  title="Click to view full course details">
+              {{course.status}}
+            </span>
+          </td>
+          <td>
+            <span class="badge" [ngClass]="getDifficultyBadgeClass(course.difficulty)">
+              {{course.difficulty}}
+            </span>
+          </td>
+          <td>{{course.enrolledStudents || 0}}</td>
+          <td>
+            <span class="rating">
+              {{course.averageRating || 0}} ★
+            </span>
+          </td>
+          <td>{{course.createdAt | date: 'MMM d, y'}}</td>
+          <td>
+            <div class="action-buttons">
+              <button class="btn-icon btn-view" (click)="viewCourseDetails(course)" title="View Course Details">
+                👁️
+              </button>
+              <button class="btn-icon btn-edit" (click)="editCourse(course.id)" title="Edit Course">
+                ✏️
+              </button>
+              <button class="btn-icon btn-bulk" (click)="bulkUpload(course.id)" title="Bulk Content Upload">
+                📦
+              </button>
+              <button class="btn-icon btn-content" (click)="manageContent(course.id)" title="Manage Content">
+                📚
+              </button>
+              <button class="btn-icon btn-mcq" (click)="manageMCQs(course.id)" title="Create MCQs">
+                📝
+              </button>
+              <button 
+                class="btn-icon btn-publish" 
+                (click)="publishCourse(course.id)" 
+                title="Publish Course"
+                *ngIf="course.status === 'DRAFT'">
+                🚀
+              </button>
+              <button class="btn-icon btn-delete" (click)="deleteCourse(course.id, course.title)" title="Delete Course">
+                🗑️
+              </button>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="empty-state" *ngIf="filteredCourses.length === 0">
+      <p *ngIf="searchTerm || filterStatus !== 'ALL'">No courses found matching your filters.</p>
+      <p *ngIf="!searchTerm && filterStatus === 'ALL'">You haven't created any courses yet. Click "Create New Course" to get started!</p>
+    </div>
+  </div>
+
+  <div class="stats-summary">
+    <div class="stat-card">
+      <h3>{{courses.length}}</h3>
+      <p>Total Courses</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{getPublishedCount()}}</h3>
+      <p>Published</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{getTotalStudents()}}</h3>
+      <p>Total Students</p>
+    </div>
+    <div class="stat-card">
+      <h3>{{getAverageRating()}}</h3>
+      <p>Avg Rating</p>
+    </div>
+  </div>
+</div>
+
+<!-- Course Details Modal (New Component) -->
+<app-course-details-modal
+  *ngIf="showDetailsModal && selectedCourse"
+  [courseId]="selectedCourse.id"
+  [isVisible]="showDetailsModal"
+  (close)="closeDetailsModal()">
+</app-course-details-modal>
+
+<!-- Old Modal (Backup - can be removed after testing) -->
+<div class="modal-overlay" *ngIf="false" (click)="closeDetailsModal()">
+  <div class="modal-container" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>📚 Course Details</h2>
+      <button class="btn-close" (click)="closeDetailsModal()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedCourse">
+      <!-- Course Overview -->
+      <div class="detail-section">
+        <div class="course-hero">
+          <img [src]="selectedCourse.thumbnail || 'assets/default-course.png'" alt="Course thumbnail" class="detail-thumbnail">
+          <div class="course-header-info">
+            <h3>{{selectedCourse.title}}</h3>
+            <p class="course-description">{{selectedCourse.description}}</p>
+            <div class="course-badges">
+              <span class="badge" [ngClass]="getStatusBadgeClass(selectedCourse.status)">{{selectedCourse.status}}</span>
+              <span class="badge" [ngClass]="getDifficultyBadgeClass(selectedCourse.difficulty)">{{selectedCourse.difficulty}}</span>
+              <span class="badge badge-info">{{selectedCourse.enrolledStudents || 0}} Students</span>
+              <span class="badge badge-warning">{{selectedCourse.averageRating || 0}} ★</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Topics by Difficulty -->
+      <div class="detail-section">
+        <div class="section-header-with-actions">
+          <h4>📖 Course Topics ({{selectedCourse.subjects?.length || 0}} total)</h4>
+          <div class="topic-actions" *ngIf="selectedCourse.subjects && selectedCourse.subjects.length > 0">
+            <button class="btn-small btn-expand" (click)="expandAllTopics()" *ngIf="expandedTopics.size < selectedCourse.subjects.length">
+              ⬇️ Expand All
+            </button>
+            <button class="btn-small btn-collapse" (click)="collapseAllTopics()" *ngIf="expandedTopics.size > 0">
+              ⬆️ Collapse All
+            </button>
+          </div>
+        </div>
+        
+        <div class="topics-list" *ngIf="selectedCourse.subjects && selectedCourse.subjects.length > 0">
+          <div class="topic-item" *ngFor="let topic of selectedCourse.subjects">
+            <div class="topic-header" (click)="toggleTopicExpansion(topic)">
+              <span class="expand-icon">{{ isTopicExpanded(topic) ? '▼' : '▶' }}</span>
+              <span class="topic-name">📚 {{topic}}</span>
+              <span class="subcontent-count" *ngIf="hasSubcontents(topic)">
+                <span class="count-badge video-count" *ngIf="getTopicVideoCount(topic) > 0" title="Videos">
+                  🎥 {{getTopicVideoCount(topic)}}
+                </span>
+                <span class="count-badge pdf-count" *ngIf="getTopicPdfCount(topic) > 0" title="PDFs">
+                  📄 {{getTopicPdfCount(topic)}}
+                </span>
+                <span class="count-total">({{getSubcontentsForTopic(topic).length}} total)</span>
+              </span>
+            </div>
+            
+            <!-- Subcontent list (expanded) -->
+            <div class="subcontent-list-view" *ngIf="isTopicExpanded(topic)">
+              <!-- New subcontent structure with files -->
+              <div class="subcontent-item-view" *ngFor="let subcontent of getSubcontentsForTopic(topic)">
+                <div class="subcontent-header-view">
+                  <span class="subcontent-icon">📝</span>
+                  <span class="subcontent-name">{{subcontent.name || subcontent.title || 'Untitled'}}</span>
+                  
+                  <!-- New structure: Show file counts -->
+                  <div class="subcontent-badges-view" *ngIf="subcontent.videoFileNames || subcontent.pdfFileNames">
+                    <span class="badge-small video" *ngIf="subcontent.videoFileNames && subcontent.videoFileNames.length > 0">
+                      🎥 {{subcontent.videoFileNames.length}} video(s)
+                    </span>
+                    <span class="badge-small pdf" *ngIf="subcontent.pdfFileNames && subcontent.pdfFileNames.length > 0">
+                      📄 {{subcontent.pdfFileNames.length}} PDF(s)
+                    </span>
+                    <span class="badge-small thumbnail" *ngIf="subcontent.thumbnailFileName">
+                      🖼️ Thumbnail
+                    </span>
+                    <span class="badge-small mcq-badge" *ngIf="subcontent.mcqCount > 0">
+                      📝 {{subcontent.mcqCount}} MCQ test(s)
+                    </span>
+                  </div>
+                  
+                  <!-- Old structure: Show content type and details -->
+                  <div class="subcontent-badges-view" *ngIf="subcontent.contentType">
+                    <span class="badge-small video" *ngIf="subcontent.contentType === 'VIDEO'">
+                      🎥 {{subcontent.duration ? subcontent.duration + ' min' : 'Video'}}
+                    </span>
+                    <span class="badge-small pdf" *ngIf="subcontent.contentType === 'PDF'">
+                      📄 {{subcontent.pages ? subcontent.pages + ' pages' : 'PDF'}}
+                    </span>
+                    <span class="badge-small difficulty-badge" [ngClass]="getDifficultyBadgeClass(subcontent.difficulty || 'BEGINNER')">
+                      {{subcontent.difficulty || 'BEGINNER'}}
+                    </span>
+                    <span class="badge-small points" *ngIf="subcontent.score">🏆 {{subcontent.score}} pts</span>
+                    <span class="badge-small preview" *ngIf="subcontent.isPreview">👁️ Preview</span>
+                  </div>
+                </div>
+                
+                <!-- Description -->
+                <p class="subcontent-desc" *ngIf="subcontent.description">{{subcontent.description}}</p>
+                
+                <!-- Files list for new structure -->
+                <div class="subcontent-files" *ngIf="subcontent.videoFileNames || subcontent.pdfFileNames">
+                  <!-- Videos -->
+                  <div class="file-list" *ngIf="subcontent.videoFileNames && subcontent.videoFileNames.length > 0">
+                    <strong class="file-list-label">🎥 Videos:</strong>
+                    <ul class="file-items">
+                      <li *ngFor="let video of subcontent.videoFileNames" class="file-item">{{video}}</li>
+                    </ul>
+                  </div>
+                  
+                  <!-- PDFs -->
+                  <div class="file-list" *ngIf="subcontent.pdfFileNames && subcontent.pdfFileNames.length > 0">
+                    <strong class="file-list-label">📄 PDFs:</strong>
+                    <ul class="file-items">
+                      <li *ngFor="let pdf of subcontent.pdfFileNames" class="file-item">{{pdf}}</li>
+                    </ul>
+                  </div>
+                  
+                  <!-- Thumbnail -->
+                  <div class="file-list" *ngIf="subcontent.thumbnailFileName">
+                    <strong class="file-list-label">🖼️ Thumbnail:</strong>
+                    <span class="file-item">{{subcontent.thumbnailFileName}}</span>
+                  </div>
+                </div>
+                
+                <!-- View button for old structure -->
+                <span class="view-btn-small" *ngIf="subcontent.contentType" (click)="viewContent(subcontent)" title="Click to view {{subcontent.contentType === 'VIDEO' ? 'video' : 'PDF'}}">▶️ View</span>
+              </div>
+              
+              <p class="no-subcontent" *ngIf="getSubcontentsForTopic(topic).length === 0">
+                <span class="empty-icon">📭</span>
+                <strong>No content uploaded for this topic yet.</strong><br>
+                <small>📌 <strong>For existing courses:</strong> Edit the course and re-save it to update the structure.</small><br>
+                <small>✨ <strong>For new courses:</strong> Use "Create Course" page to add subcontents with videos, PDFs, and materials for "{{topic}}".</small><br>
+                <small class="debug-info">🔍 Topic name: "<strong>{{topic}}</strong>"</small>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <p class="no-data" *ngIf="!selectedCourse.subjects || selectedCourse.subjects.length === 0">No topics added yet</p>
+      </div>
+
+      <!-- Content Statistics -->
+      <div class="detail-section">
+        <h4>📚 Course Content</h4>
+        <div class="content-stats">
+          <div class="stat-item">
+            <div class="stat-icon video">🎥</div>
+            <div class="stat-info">
+              <h5>{{courseContent?.totalVideos || 0}}</h5>
+              <p>Video Lectures</p>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon pdf">📄</div>
+            <div class="stat-info">
+              <h5>{{courseContent?.totalPDFs || 0}}</h5>
+              <p>PDF Materials</p>
+            </div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-icon mcq">❓</div>
+            <div class="stat-info">
+              <h5>{{courseMCQs?.length || 0}}</h5>
+              <p>Mock Tests/MCQs</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- MCQ Details -->
+      <div class="detail-section">
+        <h4>📝 Mock Tests & MCQs ({{courseMCQs?.length || 0}})</h4>
+        <div class="mcq-list" *ngIf="courseMCQs && courseMCQs.length > 0">
+          <div class="mcq-item" *ngFor="let mcq of courseMCQs">
+            <div class="mcq-header">
+              <span class="mcq-title">{{mcq.question || 'No question text'}}</span>
+              <span class="mcq-badge" [ngClass]="getDifficultyBadgeClass(mcq.difficulty || 'BEGINNER')">{{mcq.difficulty || 'BEGINNER'}}</span>
+            </div>
+            <div class="mcq-meta">
+              <span class="mcq-topic">📌 {{mcq.topic || mcq.topicName || 'No topic'}}</span>
+              <span class="mcq-points">🏆 {{mcq.points || 10}} points</span>
+            </div>
+          </div>
+        </div>
+        <p class="no-data" *ngIf="!courseMCQs || courseMCQs.length === 0">No MCQs/Mock tests created yet. Use the MCQ Management button to add questions.</p>
+      </div>
+
+      <!-- Content by Topic -->
+      <div class="detail-section">
+        <h4>📂 Content by Topic ({{courseContent?.contents?.length || 0}} items)</h4>
+        <div class="content-list" *ngIf="courseContent && courseContent.contents && courseContent.contents.length > 0">
+          <div class="content-item clickable" *ngFor="let content of courseContent.contents" (click)="viewContent(content)" title="Click to view {{content.contentType === 'VIDEO' ? 'video' : 'PDF'}}">
+            <div class="content-icon" [ngClass]="(content.contentType || 'video').toLowerCase()">
+              {{content.contentType === 'VIDEO' ? '🎥' : '📄'}}
+            </div>
+            <div class="content-info">
+              <strong>{{content.title || 'Untitled content'}}</strong>
+              <p>{{content.description || 'No description'}}</p>
+              <div class="content-meta">
+                <span class="content-topic">📌 {{content.topic || 'No topic'}}</span>
+                <span class="content-difficulty" [ngClass]="getDifficultyBadgeClass(content.difficulty || 'BEGINNER')">{{content.difficulty || 'BEGINNER'}}</span>
+                <span class="content-type">{{content.contentType || 'CONTENT'}}</span>
+                <span class="content-preview" *ngIf="content.isPreview">👁️ Preview</span>
+              </div>
+            </div>
+            <div class="content-action">
+              <span class="view-btn">▶️ View</span>
+            </div>
+          </div>
+        </div>
+        <p class="no-data" *ngIf="!courseContent || !courseContent.contents || courseContent.contents.length === 0">No content uploaded yet. Use the Manage Content or Bulk Upload buttons to add learning materials.</p>
+      </div>
+
+      <!-- Course Metadata -->
+      <div class="detail-section">
+        <h4>ℹ️ Additional Information</h4>
+        <div class="metadata-grid">
+          <div class="metadata-item">
+            <strong>Created:</strong>
+            <span>{{selectedCourse.createdAt | date: 'MMM d, y, h:mm a'}}</span>
+          </div>
+          <div class="metadata-item">
+            <strong>Last Updated:</strong>
+            <span>{{selectedCourse.updatedAt | date: 'MMM d, y, h:mm a'}}</span>
+          </div>
+          <div class="metadata-item">
+            <strong>Instructor:</strong>
+            <span>{{selectedCourse.instructorEmail}}</span>
+          </div>
+          <div class="metadata-item">
+            <strong>Course ID:</strong>
+            <span>{{selectedCourse.id}}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeDetailsModal()">Close</button>
+      <button class="btn btn-primary" (click)="editCourse(selectedCourse.id)">✏️ Edit Course</button>
+      <button class="btn btn-success" (click)="manageContent(selectedCourse.id)">📚 Manage Content</button>
+    </div>
+  </div>
+</div>
+
+<!-- Content Viewer Modal -->
+<div class="modal-overlay" *ngIf="showContentViewer" (click)="closeContentViewer()">
+  <div class="content-viewer-modal" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>{{selectedContent?.title || 'Content Viewer'}}</h2>
+      <button class="btn-close" (click)="closeContentViewer()">&times;</button>
+    </div>
+    
+    <div class="modal-body" *ngIf="selectedContent">
+      <!-- Video Player -->
+      <div class="video-container" *ngIf="isVideoContent(selectedContent)">
+        <iframe 
+          [src]="getEmbedUrl(selectedContent.url) | safe: 'resourceUrl'"
+          frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+          allowfullscreen>
+        </iframe>
+      </div>
+      
+      <!-- PDF Viewer -->
+      <div class="pdf-container" *ngIf="isPdfContent(selectedContent)">
+        <iframe 
+          [src]="selectedContent.url | safe: 'resourceUrl'"
+          frameborder="0">
+        </iframe>
+        <div class="pdf-actions">
+          <button class="btn btn-primary" (click)="downloadPdf(selectedContent.url, selectedContent.title)">
+            📥 Download PDF
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content Info -->
+      <div class="content-details">
+        <h3>{{selectedContent.title}}</h3>
+        <p>{{selectedContent.description}}</p>
+        <div class="content-metadata">
+          <span class="badge" [ngClass]="getDifficultyBadgeClass(selectedContent.difficulty)">{{selectedContent.difficulty}}</span>
+          <span class="badge badge-info">📌 {{selectedContent.topic}}</span>
+          <span class="badge badge-warning" *ngIf="selectedContent.duration">⏱️ {{selectedContent.duration}} min</span>
+          <span class="badge badge-success" *ngIf="selectedContent.score">🏆 {{selectedContent.score}} points</span>
+        </div>
+      </div>
+    </div>
+    
+    <div class="modal-footer">
+      <button class="btn btn-secondary" (click)="closeContentViewer()">Close</button>
+    </div>
+  </div>
+</div>

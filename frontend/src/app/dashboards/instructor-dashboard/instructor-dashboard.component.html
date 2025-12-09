@@ -1,125 +1,84 @@
-<div class="dashboard-container">
-  <nav class="navbar">
-    <div class="nav-brand">
-      <h2>👨‍🏫 Instructor Portal</h2>
+﻿<div class="instructor-dashboard">
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div>
+        <h1>Instructor Dashboard</h1>
+        <p>Welcome, {{ fullName }}!</p>
+      </div>
+      <button class="btn-logout" (click)="logout()">
+        🚪 Logout
+      </button>
     </div>
-    <div class="nav-user">
-      <span class="user-name">{{ fullName }}</span>
-      <button class="logout-btn" (click)="logout()">Logout</button>
-    </div>
-  </nav>
+  </div>
 
-  <div class="dashboard-content">
-    <div class="welcome-section">
-      <h1>Welcome, {{ fullName }}! 📚</h1>
-      <p>Course Management Dashboard</p>
+  <div class="main-actions">
+    <div class="action-card" (click)="showCreateCourseModal()">
+      <div class="action-icon create">
+        <span>➕</span>
+      </div>
+      <h3>Create Course</h3>
+      <p>Start a new course with topics by difficulty level</p>
     </div>
 
-    <div class="stats-grid">
-      <div class="stat-card">
-        <div class="stat-icon">📚</div>
-        <div class="stat-info">
-          <h3>8</h3>
-          <p>Total Courses</p>
+    <div class="action-card" (click)="manageCourses()">
+      <div class="action-icon manage">
+        <span>📚</span>
+      </div>
+      <h3>Manage Courses</h3>
+      <p>View, edit and publish your courses</p>
+    </div>
+  </div>
+
+  <div class="modal-overlay" *ngIf="showCreateCourse" (click)="closeCreateCourse()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Create New Course</h2>
+        <button class="close-btn" (click)="closeCreateCourse()">&times;</button>
+      </div>
+
+      <form (ngSubmit)="createCourse()" #courseForm="ngForm">
+        <div class="form-group">
+          <label for="title">Course Title *</label>
+          <input type="text" id="title" [(ngModel)]="course.title" name="title" placeholder="Enter course title" required>
         </div>
-      </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">👥</div>
-        <div class="stat-info">
-          <h3>245</h3>
-          <p>Total Students</p>
+        <div class="form-group">
+          <label for="description">Course Description *</label>
+          <textarea id="description" [(ngModel)]="course.description" name="description" rows="4" placeholder="Enter course description" required></textarea>
         </div>
-      </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">⭐</div>
-        <div class="stat-info">
-          <h3>4.8</h3>
-          <p>Average Rating</p>
+        <div class="form-group">
+          <label for="difficulty">Difficulty Level *</label>
+          <select id="difficulty" [(ngModel)]="course.difficulty" name="difficulty" required>
+            <option value="">Select difficulty</option>
+            <option value="BEGINNER">Beginner</option>
+            <option value="INTERMEDIATE">Intermediate</option>
+            <option value="ADVANCED">Advanced</option>
+          </select>
         </div>
-      </div>
 
-      <div class="stat-card">
-        <div class="stat-icon">📝</div>
-        <div class="stat-info">
-          <h3>15</h3>
-          <p>Pending Reviews</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="features-grid">
-      <div class="feature-card">
-        <div class="feature-icon">➕</div>
-        <h3>Upload Course</h3>
-        <p>Create and upload new courses for students</p>
-        <button class="feature-btn">Upload New Course</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📊</div>
-        <h3>Manage Courses</h3>
-        <p>Edit and update your existing courses</p>
-        <button class="feature-btn">Manage Courses</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">👥</div>
-        <h3>Student Management</h3>
-        <p>View and manage enrolled students</p>
-        <button class="feature-btn">View Students</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📝</div>
-        <h3>Assignments</h3>
-        <p>Create and grade student assignments</p>
-        <button class="feature-btn">Manage Assignments</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">📈</div>
-        <h3>Analytics</h3>
-        <p>View course performance and analytics</p>
-        <button class="feature-btn">View Analytics</button>
-      </div>
-
-      <div class="feature-card">
-        <div class="feature-icon">💬</div>
-        <h3>Messages</h3>
-        <p>Communicate with your students</p>
-        <button class="feature-btn">View Messages</button>
-      </div>
-    </div>
-
-    <div class="recent-courses">
-      <h2>Your Courses</h2>
-      <div class="courses-list">
-        <div class="course-item">
-          <div class="course-info">
-            <h4>Advanced Java Programming</h4>
-            <p>85 Students enrolled</p>
+        <div class="form-group">
+          <label>Course Topics *</label>
+          <div class="topics-input">
+            <input type="text" [(ngModel)]="newTopic" name="newTopic" placeholder="Enter a topic and press Enter" (keyup.enter)="addTopic(); $event.preventDefault()">
+            <button type="button" class="btn-add-topic" (click)="addTopic()">Add Topic</button>
           </div>
-          <button class="action-btn">Manage</button>
+          <div class="topics-list" *ngIf="course.topics.length > 0">
+            <span class="topic-tag" *ngFor="let topic of course.topics; let i = index">
+              {{ topic }}
+              <button type="button" class="remove-topic" (click)="removeTopic(i)">&times;</button>
+            </span>
+          </div>
         </div>
 
-        <div class="course-item">
-          <div class="course-info">
-            <h4>Microservices Architecture</h4>
-            <p>62 Students enrolled</p>
-          </div>
-          <button class="action-btn">Manage</button>
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeCreateCourse()">Cancel</button>
+          <button type="submit" class="btn-submit" [disabled]="submitting || !courseForm.valid">{{ submitting ? 'Creating...' : 'Create Course' }}</button>
         </div>
 
-        <div class="course-item">
-          <div class="course-info">
-            <h4>Database Design Fundamentals</h4>
-            <p>98 Students enrolled</p>
-          </div>
-          <button class="action-btn">Manage</button>
-        </div>
-      </div>
+        <div *ngIf="successMessage" class="alert alert-success">{{ successMessage }}</div>
+        <div *ngIf="errorMessage" class="alert alert-error">{{ errorMessage }}</div>
+      </form>
     </div>
   </div>
 </div>

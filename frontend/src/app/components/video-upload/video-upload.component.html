@@ -1,0 +1,176 @@
+<div class="upload-container">
+  <div class="form-header">
+    <h1>{{ isEditMode ? 'Edit Video' : 'Upload Video' }}</h1>
+    <p class="subtitle">{{ isEditMode ? 'Update video information' : 'Upload a new video to the platform' }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ isEditMode ? 'Saving video...' : 'Uploading video...' }}</p>
+    <div class="progress-bar" *ngIf="uploadProgress > 0">
+      <div class="progress-fill" [style.width.%]="uploadProgress"></div>
+    </div>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    <span class="icon">✅</span>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <form [formGroup]="videoForm" (ngSubmit)="onSubmit()" *ngIf="!loading && !successMessage">
+    <!-- Video File Upload (only for create or re-upload) -->
+    <div class="form-group" *ngIf="!isEditMode">
+      <label for="videoFile">Video File <span class="required">*</span></label>
+      <div class="file-upload">
+        <input 
+          type="file" 
+          id="videoFile" 
+          accept="video/*" 
+          (change)="onVideoSelect($event)"
+          hidden
+          #videoInput>
+        <label for="videoFile" class="upload-label">
+          <span class="icon">🎥</span>
+          <span *ngIf="!videoFile">Click to select video</span>
+          <span *ngIf="videoFile" class="file-name">{{ videoFile.name }}</span>
+          <span class="hint">MP4, MOV, AVI up to 500MB</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label for="title">Video Title <span class="required">*</span></label>
+      <input 
+        type="text" 
+        id="title" 
+        formControlName="title" 
+        placeholder="e.g., Introduction to Binary Trees"
+        [class.invalid]="title?.invalid && title?.touched">
+      <div class="error-text" *ngIf="title?.invalid && title?.touched">
+        <span *ngIf="title?.errors?.['required']">Title is required</span>
+        <span *ngIf="title?.errors?.['minlength']">Title must be at least 3 characters</span>
+        <span *ngIf="title?.errors?.['maxlength']">Title cannot exceed 200 characters</span>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea 
+        id="description" 
+        formControlName="description" 
+        rows="4" 
+        placeholder="Provide a description of the video content"
+        [class.invalid]="description?.invalid && description?.touched"></textarea>
+      <div class="error-text" *ngIf="description?.invalid && description?.touched">
+        <span *ngIf="description?.errors?.['maxlength']">Description cannot exceed 1000 characters</span>
+      </div>
+    </div>
+
+    <!-- Subject Selection -->
+    <div class="form-group">
+      <label for="subjectId">Subject <span class="required">*</span></label>
+      <select 
+        id="subjectId" 
+        formControlName="subjectId"
+        [class.invalid]="subjectId?.invalid && subjectId?.touched">
+        <option value="">Select a subject</option>
+        <option *ngFor="let subject of subjects" [value]="subject.id">
+          {{ subject.title }}
+        </option>
+      </select>
+      <div class="error-text" *ngIf="subjectId?.invalid && subjectId?.touched">
+        <span *ngIf="subjectId?.errors?.['required']">Subject is required</span>
+      </div>
+    </div>
+
+    <!-- Topic Selection -->
+    <div class="form-group">
+      <label for="topicId">Topic <span class="required">*</span></label>
+      <select 
+        id="topicId" 
+        formControlName="topicId"
+        [class.invalid]="topicId?.invalid && topicId?.touched"
+        [disabled]="filteredTopics.length === 0">
+        <option value="">Select a topic</option>
+        <option *ngFor="let topic of filteredTopics" [value]="topic.id">
+          {{ topic.name }}
+        </option>
+      </select>
+      <div class="error-text" *ngIf="topicId?.invalid && topicId?.touched">
+        <span *ngIf="topicId?.errors?.['required']">Topic is required</span>
+      </div>
+      <p class="hint-text" *ngIf="subjectId?.value && filteredTopics.length === 0">
+        No topics available. Please add topics to the selected subject first.
+      </p>
+    </div>
+
+    <!-- Duration -->
+    <div class="form-group">
+      <label for="duration">Duration (minutes) <span class="required">*</span></label>
+      <input 
+        type="number" 
+        id="duration" 
+        formControlName="duration" 
+        placeholder="e.g., 15"
+        min="1"
+        [class.invalid]="duration?.invalid && duration?.touched">
+      <div class="error-text" *ngIf="duration?.invalid && duration?.touched">
+        <span *ngIf="duration?.errors?.['required']">Duration is required</span>
+        <span *ngIf="duration?.errors?.['min']">Duration must be at least 1 minute</span>
+      </div>
+    </div>
+
+    <!-- Preview Available -->
+    <div class="form-group checkbox-group">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="isPreview">
+        <span>Make this video available as preview (non-enrolled students can watch)</span>
+      </label>
+    </div>
+
+    <!-- Thumbnail Upload -->
+    <div class="form-group">
+      <label for="thumbnail">Video Thumbnail</label>
+      <div class="thumbnail-upload">
+        <div *ngIf="thumbnailPreview" class="thumbnail-preview">
+          <img [src]="thumbnailPreview" alt="Thumbnail preview">
+          <button type="button" class="btn-remove" (click)="removeThumbnail()">
+            <span>✖</span>
+          </button>
+        </div>
+
+        <div *ngIf="!thumbnailPreview" class="upload-area">
+          <input 
+            type="file" 
+            id="thumbnail" 
+            accept="image/*" 
+            (change)="onThumbnailSelect($event)"
+            hidden
+            #thumbnailInput>
+          <label for="thumbnail" class="upload-label">
+            <span class="icon">📷</span>
+            <span>Click to upload thumbnail</span>
+            <span class="hint">PNG, JPG up to 5MB</span>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-cancel" (click)="cancel()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-submit" [disabled]="videoForm.invalid || (!videoFile && !isEditMode)">
+        {{ isEditMode ? 'Update Video' : 'Upload Video' }}
+      </button>
+    </div>
+  </form>
+</div>

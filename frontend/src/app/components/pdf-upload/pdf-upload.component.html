@@ -1,0 +1,136 @@
+<div class="upload-container">
+  <div class="form-header">
+    <h1>{{ isEditMode ? 'Edit PDF' : 'Upload PDF' }}</h1>
+    <p class="subtitle">{{ isEditMode ? 'Update PDF information' : 'Upload a new PDF document' }}</p>
+  </div>
+
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>{{ isEditMode ? 'Saving PDF...' : 'Uploading PDF...' }}</p>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    <span class="icon">✅</span>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <form [formGroup]="pdfForm" (ngSubmit)="onSubmit()" *ngIf="!loading && !successMessage">
+    <!-- PDF File Upload -->
+    <div class="form-group" *ngIf="!isEditMode">
+      <label for="pdfFile">PDF File <span class="required">*</span></label>
+      <div class="file-upload">
+        <input 
+          type="file" 
+          id="pdfFile" 
+          accept="application/pdf" 
+          (change)="onPDFSelect($event)"
+          hidden
+          #pdfInput>
+        <label for="pdfFile" class="upload-label">
+          <span class="icon">📄</span>
+          <span *ngIf="!pdfFile">Click to select PDF</span>
+          <span *ngIf="pdfFile" class="file-info">
+            <span class="file-name">{{ pdfFile.name }}</span>
+            <span class="file-size">{{ getFileSize() }}</span>
+          </span>
+          <span class="hint">PDF up to 50MB</span>
+        </label>
+      </div>
+    </div>
+
+    <!-- Title -->
+    <div class="form-group">
+      <label for="title">PDF Title <span class="required">*</span></label>
+      <input 
+        type="text" 
+        id="title" 
+        formControlName="title" 
+        placeholder="e.g., Data Structures Cheat Sheet"
+        [class.invalid]="title?.invalid && title?.touched">
+      <div class="error-text" *ngIf="title?.invalid && title?.touched">
+        <span *ngIf="title?.errors?.['required']">Title is required</span>
+        <span *ngIf="title?.errors?.['minlength']">Title must be at least 3 characters</span>
+        <span *ngIf="title?.errors?.['maxlength']">Title cannot exceed 200 characters</span>
+      </div>
+    </div>
+
+    <!-- Description -->
+    <div class="form-group">
+      <label for="description">Description</label>
+      <textarea 
+        id="description" 
+        formControlName="description" 
+        rows="4" 
+        placeholder="Describe the PDF content"
+        [class.invalid]="description?.invalid && description?.touched"></textarea>
+    </div>
+
+    <!-- Subject Selection -->
+    <div class="form-group">
+      <label for="subjectId">Subject <span class="required">*</span></label>
+      <select 
+        id="subjectId" 
+        formControlName="subjectId"
+        [class.invalid]="subjectId?.invalid && subjectId?.touched">
+        <option value="">Select a subject</option>
+        <option *ngFor="let subject of subjects" [value]="subject.id">
+          {{ subject.title }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Topic Selection -->
+    <div class="form-group">
+      <label for="topicId">Topic <span class="required">*</span></label>
+      <select 
+        id="topicId" 
+        formControlName="topicId"
+        [class.invalid]="topicId?.invalid && topicId?.touched"
+        [disabled]="filteredTopics.length === 0">
+        <option value="">Select a topic</option>
+        <option *ngFor="let topic of filteredTopics" [value]="topic.id">
+          {{ topic.name }}
+        </option>
+      </select>
+    </div>
+
+    <!-- Page Count -->
+    <div class="form-group">
+      <label for="pages">Number of Pages <span class="required">*</span></label>
+      <input 
+        type="number" 
+        id="pages" 
+        formControlName="pages" 
+        placeholder="e.g., 25"
+        min="1"
+        [class.invalid]="pages?.invalid && pages?.touched">
+      <div class="error-text" *ngIf="pages?.invalid && pages?.touched">
+        <span *ngIf="pages?.errors?.['required']">Page count is required</span>
+        <span *ngIf="pages?.errors?.['min']">Page count must be at least 1</span>
+      </div>
+    </div>
+
+    <!-- Downloadable -->
+    <div class="form-group checkbox-group">
+      <label class="checkbox-label">
+        <input type="checkbox" formControlName="isDownloadable">
+        <span>Allow students to download this PDF</span>
+      </label>
+    </div>
+
+    <!-- Form Actions -->
+    <div class="form-actions">
+      <button type="button" class="btn btn-cancel" (click)="cancel()">
+        Cancel
+      </button>
+      <button type="submit" class="btn btn-submit" [disabled]="pdfForm.invalid || (!pdfFile && !isEditMode)">
+        {{ isEditMode ? 'Update PDF' : 'Upload PDF' }}
+      </button>
+    </div>
+  </form>
+</div>

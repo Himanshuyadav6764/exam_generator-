@@ -1,0 +1,114 @@
+<div class="subject-list-container">
+  <div class="header">
+    <h1>📚 Course Catalog</h1>
+    <button *ngIf="userRole === 'INSTRUCTOR' || userRole === 'ADMIN'" 
+            class="btn-create" 
+            (click)="createNewSubject()">
+      ➕ Create New Subject
+    </button>
+  </div>
+
+  <!-- Filters -->
+  <div class="filters">
+    <div class="filter-group">
+      <label>Difficulty Level:</label>
+      <select [(ngModel)]="selectedDifficulty" (change)="applyFilters()" class="filter-select">
+        <option value="ALL">All Levels</option>
+        <option value="BEGINNER">🌱 Beginner</option>
+        <option value="INTERMEDIATE">🔥 Intermediate</option>
+        <option value="ADVANCED">⚡ Advanced</option>
+      </select>
+    </div>
+
+    <div class="filter-group" *ngIf="userRole === 'INSTRUCTOR' || userRole === 'ADMIN'">
+      <label>Status:</label>
+      <select [(ngModel)]="selectedStatus" (change)="applyFilters()" class="filter-select">
+        <option value="ALL">All Status</option>
+        <option value="DRAFT">📝 Draft</option>
+        <option value="PUBLISHED">✅ Published</option>
+      </select>
+    </div>
+
+    <div class="results-count">
+      Showing {{ filteredSubjects.length }} of {{ subjects.length }} subjects
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading subjects...</p>
+  </div>
+
+  <!-- Error Message -->
+  <div *ngIf="errorMessage" class="error-message">
+    ⚠️ {{ errorMessage }}
+  </div>
+
+  <!-- Subject Cards Grid -->
+  <div class="subjects-grid" *ngIf="!isLoading && !errorMessage">
+    <div *ngIf="filteredSubjects.length === 0" class="no-subjects">
+      <p>No subjects found matching your filters.</p>
+      <button *ngIf="userRole === 'INSTRUCTOR'" class="btn-create" (click)="createNewSubject()">
+        Create Your First Subject
+      </button>
+    </div>
+
+    <div *ngFor="let subject of filteredSubjects" 
+         class="subject-card" 
+         (click)="viewSubjectDetails(subject.id!)">
+      
+      <!-- Thumbnail -->
+      <div class="card-thumbnail">
+        <img [src]="subject.thumbnail || 'assets/default-course-thumbnail.jpg'" 
+             [alt]="subject.title"
+             class="thumbnail-image">
+        <div class="difficulty-badge" [ngClass]="getDifficultyClass(subject.difficulty)">
+          {{ getDifficultyIcon(subject.difficulty) }} {{ subject.difficulty }}
+        </div>
+      </div>
+
+      <!-- Content -->
+      <div class="card-content">
+        <h3 class="card-title">{{ subject.title }}</h3>
+        <p class="card-description">{{ subject.description || 'No description available' }}</p>
+
+        <!-- Instructor Info -->
+        <div class="instructor-info">
+          <span class="instructor-icon">👨‍🏫</span>
+          <span class="instructor-name">{{ subject.instructorName || 'Unknown Instructor' }}</span>
+        </div>
+
+        <!-- Status Badge -->
+        <div class="status-badge" [class.published]="subject.status === 'PUBLISHED'" 
+                                   [class.draft]="subject.status === 'DRAFT'">
+          {{ subject.status === 'PUBLISHED' ? '✅ Published' : '📝 Draft' }}
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="card-actions" *ngIf="canEdit(subject) || canDelete(subject)">
+        <button *ngIf="canEdit(subject)" 
+                class="btn-action btn-edit" 
+                (click)="editSubject(subject.id!, $event)"
+                title="Edit">
+          ✏️
+        </button>
+        
+        <button *ngIf="canEdit(subject)" 
+                class="btn-action btn-publish" 
+                (click)="togglePublish(subject, $event)"
+                [title]="subject.status === 'PUBLISHED' ? 'Unpublish' : 'Publish'">
+          {{ subject.status === 'PUBLISHED' ? '📥' : '📤' }}
+        </button>
+        
+        <button *ngIf="canDelete(subject)" 
+                class="btn-action btn-delete" 
+                (click)="deleteSubject(subject.id!, $event)"
+                title="Delete">
+          🗑️
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,219 @@
+<div class="course-overview-container">
+  <!-- Header -->
+  <header class="overview-header">
+    <button class="back-btn" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M19 12H5M12 19l-7-7 7-7"/>
+      </svg>
+      Back to Dashboard
+    </button>
+    
+    <div class="header-content" *ngIf="courseDetails">
+      <h1 class="course-title">{{ courseDetails.title }}</h1>
+      <p class="course-description">{{ courseDetails.description }}</p>
+      <div class="course-meta">
+        <span class="meta-item">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+            <circle cx="12" cy="7" r="4"></circle>
+          </svg>
+          {{ courseDetails.instructorName }}
+        </span>
+        <span class="meta-item" *ngIf="courseDetails.difficulty">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+          {{ courseDetails.difficulty }}
+        </span>
+        <span class="meta-item" *ngIf="courseDetails.topicCount">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"></path>
+            <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"></path>
+          </svg>
+          {{ courseDetails.topicCount }} Topics
+        </span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <div class="spinner-large"></div>
+    <p>Loading your progress...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!loading" class="overview-content">
+    
+    <!-- Start Learning Card -->
+    <div class="start-learning-card" (click)="startLearning()">
+      <div class="card-icon">
+        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <polygon points="5 3 19 12 5 21 5 3"></polygon>
+        </svg>
+      </div>
+      <div class="card-content">
+        <h2>Start Learning</h2>
+        <p>Begin your journey through the course content</p>
+      </div>
+      <div class="card-arrow">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M5 12h14M12 5l7 7-7 7"/>
+        </svg>
+      </div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="stats-grid">
+      <!-- Overall Score -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <path d="M22 12h-4l-3 9L9 3l-3 9H2"></path>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3>Overall Score</h3>
+          <p class="stat-value">{{ performanceData?.overallScore || 0 }}%</p>
+        </div>
+      </div>
+
+      <!-- Time Spent -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <polyline points="12 6 12 12 16 14"></polyline>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3>Time Spent</h3>
+          <p class="stat-value">{{ formatTime(performanceData?.totalTimeSpent || 0) }}</p>
+        </div>
+      </div>
+
+      <!-- Total Quizzes -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <polyline points="9 11 12 14 22 4"></polyline>
+            <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3>Quizzes</h3>
+          <p class="stat-value">{{ performanceData?.totalQuizzes || 0 }}</p>
+        </div>
+      </div>
+
+      <!-- Current Level -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3>Current Level</h3>
+          <p class="stat-value">{{ performanceData?.currentLevel || 'BEGINNER' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topic-wise Strength -->
+    <div class="section-card" *ngIf="topicLabels.length > 0">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="18" y1="20" x2="18" y2="10"></line>
+          <line x1="12" y1="20" x2="12" y2="4"></line>
+          <line x1="6" y1="20" x2="6" y2="14"></line>
+        </svg>
+        Topic-wise Strength
+      </h2>
+      <div class="topics-strength-grid">
+        <div *ngFor="let topic of topicLabels; let i = index" class="topic-strength-item">
+          <div class="topic-info">
+            <span class="topic-name">{{ topic }}</span>
+            <span class="topic-score">{{ topicScoreData[i] }}%</span>
+          </div>
+          <div class="strength-bar">
+            <div class="strength-fill" 
+                 [style.width.%]="topicScoreData[i]"
+                 [style.background]="getStrengthColor(performanceData?.strengthWeakness?.[topic] || 'MODERATE')">
+            </div>
+          </div>
+          <span class="strength-label" 
+                [style.color]="getStrengthColor(performanceData?.strengthWeakness?.[topic] || 'MODERATE')">
+            {{ performanceData?.strengthWeakness?.[topic] || 'MODERATE' }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Performance Tracking -->
+    <div class="section-card">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path>
+        </svg>
+        Student Performance Tracking
+      </h2>
+      
+      <div class="performance-stats">
+        <div class="perf-stat">
+          <div class="perf-label">Total Attempts</div>
+          <div class="perf-value">{{ totalAttempts }}</div>
+        </div>
+        <div class="perf-stat">
+          <div class="perf-label">Average Score</div>
+          <div class="perf-value">{{ averageScore }}%</div>
+        </div>
+        <div class="perf-stat">
+          <div class="perf-label">Completion Status</div>
+          <div class="perf-value">{{ completionStatus }}%</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Recent Quizzes -->
+    <div class="section-card">
+      <h2 class="section-title">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M12 20h9"></path>
+          <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+        </svg>
+        Recent Quizzes
+      </h2>
+      
+      <div *ngIf="recentQuizzes.length > 0" class="quizzes-list">
+        <div *ngFor="let quiz of recentQuizzes" class="quiz-item">
+          <div class="quiz-header">
+            <span class="quiz-topic">{{ quiz.topic }}</span>
+            <span class="quiz-date">{{ formatDate(quiz.date) }}</span>
+          </div>
+          <div class="quiz-details">
+            <div class="quiz-score">
+              <span class="score-label">Score:</span>
+              <span class="score-value">{{ quiz.score }}/{{ quiz.totalQuestions }} ({{ quiz.percentage }}%)</span>
+            </div>
+            <span class="quiz-difficulty" [style.background]="getDifficultyColor(quiz.difficulty)">
+              {{ quiz.difficulty }}
+            </span>
+          </div>
+          <div class="quiz-progress">
+            <div class="progress-bar">
+              <div class="progress-fill" [style.width.%]="quiz.percentage"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="recentQuizzes.length === 0" class="empty-state">
+        <div class="empty-icon">📝</div>
+        <p>No quiz attempts yet</p>
+        <p class="empty-subtitle">Start learning to take your first quiz!</p>
+      </div>
+    </div>
+
+  </div>
+</div>

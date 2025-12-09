@@ -1,0 +1,212 @@
+<div class="modal-overlay" *ngIf="isVisible" (click)="closeModal()">
+    <div class="modal-container" (click)="$event.stopPropagation()">
+        <!-- Modal Header -->
+        <div class="modal-header">
+            <h2><i class="fas fa-book"></i> Course Details</h2>
+            <button class="btn-close" (click)="closeModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-state">
+            <div class="spinner"></div>
+            <p>Loading course details...</p>
+        </div>
+
+        <!-- Error State -->
+        <div *ngIf="error && !loading" class="error-state">
+            <i class="fas fa-exclamation-circle"></i>
+            <p>{{ error }}</p>
+            <button class="btn-retry" (click)="loadCourseDetails()">Retry</button>
+        </div>
+
+        <!-- Course Content -->
+        <div *ngIf="courseDetails && !loading && !error" class="modal-body">
+            <!-- Course Header Info -->
+            <div class="course-header-info">
+                <div class="course-thumbnail" *ngIf="courseDetails.thumbnail">
+                    <img [src]="courseDetails.thumbnail" [alt]="courseDetails.title" />
+                </div>
+                <div class="course-basic-info">
+                    <h3>{{ courseDetails.title }}</h3>
+                    <p class="course-description">{{ courseDetails.description }}</p>
+                    <div class="course-meta">
+                        <span class="meta-item">
+                            <i class="fas fa-user-tie"></i> {{ courseDetails.instructorName }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-signal"></i> {{ courseDetails.difficulty }}
+                        </span>
+                        <span class="meta-item">
+                            <i class="fas fa-users"></i> {{ courseDetails.enrolledStudents }} Students
+                        </span>
+                        <span class="meta-item status-badge" [class]="'status-' + courseDetails.status.toLowerCase()">
+                            {{ courseDetails.status }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Content Summary Cards -->
+            <div class="content-summary">
+                <div class="summary-card">
+                    <i class="fas fa-layer-group icon-topics"></i>
+                    <div class="summary-content">
+                        <h4>{{ courseDetails.contentCounts.totalTopics }}</h4>
+                        <p>Topics</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-book-open icon-subtopics"></i>
+                    <div class="summary-content">
+                        <h4>{{ courseDetails.contentCounts.totalSubtopics }}</h4>
+                        <p>Subtopics</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-video icon-videos"></i>
+                    <div class="summary-content">
+                        <h4>{{ courseDetails.contentCounts.totalVideos }}</h4>
+                        <p>Videos</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-file-pdf icon-pdfs"></i>
+                    <div class="summary-content">
+                        <h4>{{ courseDetails.contentCounts.totalPdfs }}</h4>
+                        <p>PDFs</p>
+                    </div>
+                </div>
+                <div class="summary-card">
+                    <i class="fas fa-clipboard-question icon-mcqs"></i>
+                    <div class="summary-content">
+                        <h4>{{ courseDetails.contentCounts.totalMcqs }}</h4>
+                        <p>MCQs</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics and Subtopics Accordion -->
+            <div class="topics-section">
+                <h3 class="section-title">
+                    <i class="fas fa-list"></i> Course Content
+                </h3>
+
+                <div class="topics-accordion">
+                    <div *ngFor="let topic of courseDetails.topics" class="topic-item">
+                        <!-- Topic Header -->
+                        <div class="topic-header" (click)="toggleTopic(topic)">
+                            <div class="topic-left">
+                                <i class="fas fa-chevron-right expand-icon" 
+                                   [class.expanded]="isTopicExpanded(topic)"></i>
+                                <i class="fas fa-book topic-icon"></i>
+                                <span class="topic-name">{{ topic }}</span>
+                            </div>
+                            <div class="topic-counts" *ngIf="getTopicCounts(topic) as counts">
+                                <span class="count-badge subtopic-badge">
+                                    <i class="fas fa-bookmark"></i> {{ counts.subtopicCount }}
+                                </span>
+                                <span class="count-badge video-badge">
+                                    <i class="fas fa-video"></i> {{ counts.videoCount }}
+                                </span>
+                                <span class="count-badge pdf-badge">
+                                    <i class="fas fa-file-pdf"></i> {{ counts.pdfCount }}
+                                </span>
+                                <span class="count-badge mcq-badge">
+                                    <i class="fas fa-clipboard-question"></i> {{ counts.mcqCount }}
+                                </span>
+                            </div>
+                        </div>
+
+                        <!-- Subtopics (Nested Accordion) -->
+                        <div class="subtopics-container" *ngIf="isTopicExpanded(topic)">
+                            <div *ngFor="let subtopic of getSubtopicsForTopic(topic)" 
+                                 class="subtopic-item">
+                                <!-- Subtopic Header -->
+                                <div class="subtopic-header" 
+                                     (click)="toggleSubtopic(topic, subtopic.name)">
+                                    <div class="subtopic-left">
+                                        <i class="fas fa-chevron-right expand-icon" 
+                                           [class.expanded]="isSubtopicExpanded(topic, subtopic.name)"></i>
+                                        <i class="fas fa-bookmark subtopic-icon"></i>
+                                        <span class="subtopic-name">{{ subtopic.name }}</span>
+                                    </div>
+                                    <div class="subtopic-counts">
+                                        <span class="mini-badge video-mini" *ngIf="subtopic.videoCount > 0">
+                                            <i class="fas fa-video"></i> {{ subtopic.videoCount }}
+                                        </span>
+                                        <span class="mini-badge pdf-mini" *ngIf="subtopic.pdfCount > 0">
+                                            <i class="fas fa-file-pdf"></i> {{ subtopic.pdfCount }}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Subtopic Content Details -->
+                                <div class="subtopic-content" 
+                                     *ngIf="isSubtopicExpanded(topic, subtopic.name)">
+                                    
+                                    <p class="subtopic-description" *ngIf="subtopic.description">
+                                        {{ subtopic.description }}
+                                    </p>
+
+                                    <!-- Videos List -->
+                                    <div class="content-list" *ngIf="subtopic.videoUrls && subtopic.videoUrls.length > 0">
+                                        <h5><i class="fas fa-video"></i> Videos ({{ subtopic.videoUrls.length }})</h5>
+                                        <ul>
+                                            <li *ngFor="let videoUrl of subtopic.videoUrls; let i = index">
+                                                <i class="fas fa-play-circle"></i>
+                                                <a [href]="videoUrl" target="_blank">
+                                                    {{ subtopic.videoFileNames?.[i] || 'Video ' + (i + 1) }}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <!-- PDFs List -->
+                                    <div class="content-list" *ngIf="subtopic.pdfUrls && subtopic.pdfUrls.length > 0">
+                                        <h5><i class="fas fa-file-pdf"></i> PDFs ({{ subtopic.pdfUrls.length }})</h5>
+                                        <ul>
+                                            <li *ngFor="let pdfUrl of subtopic.pdfUrls; let i = index">
+                                                <i class="fas fa-file-pdf"></i>
+                                                <a [href]="pdfUrl" target="_blank">
+                                                    {{ subtopic.pdfFileNames?.[i] || 'Document ' + (i + 1) }}
+                                                </a>
+                                            </li>
+                                        </ul>
+                                    </div>
+
+                                    <div class="no-content" 
+                                         *ngIf="(!subtopic.videoUrls || subtopic.videoUrls.length === 0) && 
+                                                (!subtopic.pdfUrls || subtopic.pdfUrls.length === 0)">
+                                        <i class="fas fa-info-circle"></i>
+                                        <span>No content uploaded yet</span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- No Subtopics Message -->
+                            <div class="no-subtopics" *ngIf="getSubtopicsForTopic(topic).length === 0">
+                                <i class="fas fa-inbox"></i>
+                                <p>No subtopics added yet</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- No Topics Message -->
+                    <div class="no-topics" *ngIf="!courseDetails.topics || courseDetails.topics.length === 0">
+                        <i class="fas fa-folder-open"></i>
+                        <p>No topics created yet</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal Footer -->
+        <div class="modal-footer" *ngIf="courseDetails && !loading">
+            <button class="btn-secondary" (click)="closeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+        </div>
+    </div>
+</div>

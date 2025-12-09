@@ -1,0 +1,296 @@
+<div class="create-course-wizard">
+  
+  <!-- Progress Steps Header -->
+  <div class="steps-header">
+    <div class="step" [class.active]="currentStep === 'course'" [class.completed]="courseId">
+      <div class="step-number">1</div>
+      <div class="step-label">Course Details</div>
+    </div>
+    <div class="step-line" [class.completed]="courseId"></div>
+    <div class="step" [class.active]="currentStep === 'topics'" [class.completed]="topics.length > 0">
+      <div class="step-number">2</div>
+      <div class="step-label">Add Topics & Content</div>
+    </div>
+    <div class="step-line"></div>
+    <div class="step" [class.active]="currentStep === 'publish'">
+      <div class="step-number">3</div>
+      <div class="step-label">Review & Publish</div>
+    </div>
+  </div>
+
+  <!-- Messages -->
+  <div *ngIf="message" class="alert alert-success">✅ {{ message }}</div>
+  <div *ngIf="errorMessage" class="alert alert-error">❌ {{ errorMessage }}</div>
+
+  <!-- ========== STEP 1: COURSE CREATION ========== -->
+  <div *ngIf="currentStep === 'course'" class="step-content">
+    <div class="panel">
+      <h2>📚 Create New Course</h2>
+      
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Course Title *</label>
+          <input type="text" [(ngModel)]="course.title" placeholder="e.g., Complete Java Programming">
+        </div>
+
+        <div class="form-group">
+          <label>Category *</label>
+          <input type="text" [(ngModel)]="course.category" placeholder="e.g., Programming, Design, Business">
+        </div>
+
+        <div class="form-group full-width">
+          <label>Description *</label>
+          <textarea [(ngModel)]="course.description" rows="4" 
+                    placeholder="What will students learn?"></textarea>
+        </div>
+
+        <div class="form-group">
+          <label>Difficulty Level</label>
+          <select [(ngModel)]="course.difficulty">
+            <option value="BEGINNER">Beginner</option>
+            <option value="INTERMEDIATE">Intermediate</option>
+            <option value="ADVANCED">Advanced</option>
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label>Course Thumbnail</label>
+          <input type="file" (change)="onThumbnailSelect($event)" accept="image/*">
+          <img *ngIf="thumbnailPreview" [src]="thumbnailPreview" class="thumbnail-preview">
+        </div>
+      </div>
+
+      <div class="form-actions">
+        <button (click)="cancelCreation()" class="btn-secondary">Cancel</button>
+        <button (click)="createCourse()" class="btn-primary" [disabled]="uploadingFile">
+          {{ uploadingFile ? 'Creating...' : 'Create Course & Add Topics →' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ========== STEP 2: TOPIC & SUBCONTENT MANAGEMENT ========== -->
+  <div *ngIf="currentStep === 'topics'" class="step-content">
+    
+    <!-- Overall Progress -->
+    <div class="progress-panel">
+      <!-- Progress tracking removed for simplicity -->
+    </div>
+
+    <!-- Add Topic Button -->
+    <button (click)="toggleTopicForm()" class="btn-add-topic">
+      {{ showTopicForm ? '✕ Cancel' : '➕ Add New Topic' }}
+    </button>
+
+    <!-- Topic Form -->
+    <div *ngIf="showTopicForm" class="topic-form panel">
+      <h3>Add Topic</h3>
+      <div class="form-group">
+        <label>Topic Name *</label>
+        <input type="text" [(ngModel)]="topicInput" placeholder="e.g., Introduction to Variables">
+      </div>
+      <div class="form-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="topicDescriptionInput" rows="2"></textarea>
+      </div>
+      <button (click)="addTopic()" class="btn-primary" [disabled]="!topicInput.trim()">
+        Save Topic
+      </button>
+    </div>
+
+    <!-- Topics List -->
+    <div class="topics-container">
+      <div *ngFor="let topic of topics" class="topic-card">
+        
+        <!-- Topic Header -->
+        <div class="topic-header" (click)="toggleTopicExpand(topic.id)">
+          <div class="topic-info">
+            <h3>📖 {{ topic.name }}</h3>
+            <p *ngIf="topic.description">{{ topic.description }}</p>
+            <div class="topic-stats">
+              <span>{{ topic.subcontents.length }} Subcontents</span>
+              <!-- {{ topic.subcontents.length }} Subcontents -->
+            </div>
+          </div>
+          <div class="topic-actions">
+            <button (click)="deleteTopic(topic.id); $event.stopPropagation()" class="btn-delete">
+              🗑️
+            </button>
+            <span class="expand-icon">{{ topic.expanded ? '▼' : '▶' }}</span>
+          </div>
+        </div>
+
+        <!-- Topic Progress Bar -->
+        <!-- Progress bar removed -->
+
+        <!-- Subcontents (Expanded) -->
+        <div *ngIf="topic.expanded" class="subcontents-panel">
+          
+          <!-- Action Buttons -->
+          <div class="topic-action-buttons">
+            <button (click)="toggleSubcontentForm(topic.id)" class="btn-add-subcontent">
+              {{ showSubcontentForm && selectedTopicId === topic.id ? '✕ Cancel' : '➕ Add Subcontent' }}
+            </button>
+            
+            <button (click)="openAIQuizGenerator(topic)" class="btn-ai-quiz">
+              🤖 AI Quiz Generator
+            </button>
+          </div>
+
+          <!-- Subcontent Form -->
+          <div *ngIf="showSubcontentForm && selectedTopicId === topic.id" class="subcontent-form">
+            <div class="form-group">
+              <label>Subcontent Name *</label>
+              <input type="text" [(ngModel)]="subcontentInput" placeholder="e.g., Lesson 1: Basic Syntax">
+            </div>
+            <div class="form-group">
+              <label>Description</label>
+              <textarea [(ngModel)]="subcontentDescriptionInput" rows="2"></textarea>
+            </div>
+            <button (click)="addSubcontent(topic.id)" class="btn-primary" [disabled]="!subcontentInput.trim()">
+              Save Subcontent
+            </button>
+          </div>
+
+          <!-- Subcontents List -->
+          <div class="subcontents-list">
+            <div *ngFor="let subcontent of topic.subcontents" class="subcontent-item">
+              <div class="subcontent-header">
+                <h4>{{ subcontent.name }}</h4>
+                <span class="status-badge" [class]="subcontent.status">
+                  {{ subcontent.status === 'uploading' ? '⏳' : subcontent.status === 'completed' ? '✅' : '⏺️' }}
+                </span>
+              </div>
+              <p *ngIf="subcontent.description" class="subcontent-desc">{{ subcontent.description }}</p>
+
+              <!-- Upload Actions -->
+              <div class="upload-actions">
+                
+                <!-- Video Upload -->
+                <div class="upload-item">
+                  <label class="upload-btn">
+                    <input type="file" (change)="uploadVideo(topic.id, subcontent.id, $event)" 
+                           accept="video/*" style="display: none;">
+                    <span class="icon">🎥</span>
+                    {{ subcontent.videoUrl ? '✓ Video' : 'Upload Video' }}
+                  </label>
+                  <span *ngIf="subcontent.videoFileName" class="file-name">{{ subcontent.videoFileName }}</span>
+                </div>
+
+                <!-- PDF Upload -->
+                <div class="upload-item">
+                  <label class="upload-btn">
+                    <input type="file" (change)="uploadPDF(topic.id, subcontent.id, $event)" 
+                           accept="application/pdf" style="display: none;">
+                    <span class="icon">📄</span>
+                    {{ subcontent.pdfUrl ? '✓ PDF' : 'Upload PDF' }}
+                  </label>
+                  <span *ngIf="subcontent.pdfFileName" class="file-name">{{ subcontent.pdfFileName }}</span>
+                </div>
+
+                <!-- MCQ Button -->
+                <button (click)="openMCQForm(topic.id, subcontent.id)" class="upload-btn mcq-btn">
+                  <span class="icon">❓</span>
+                  <span *ngIf="subcontent.mcqCount">{{ subcontent.mcqCount }} MCQs</span>
+                  <span *ngIf="!subcontent.mcqCount">Add MCQ Test</span>
+                </button>
+
+                <!-- Delete Subcontent -->
+                <button (click)="deleteSubcontent(topic.id, subcontent.id)" class="btn-delete-small">
+                  🗑️
+                </button>
+              </div>
+            </div>
+
+            <p *ngIf="topic.subcontents.length === 0" class="empty-message">
+              No subcontents yet. Click "Add Subcontent" to get started.
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <p *ngIf="topics.length === 0" class="empty-message">
+        No topics yet. Click "Add New Topic" to create your first topic.
+      </p>
+    </div>
+
+    <!-- Navigation -->
+    <div class="form-actions">
+      <button (click)="currentStep = 'course'" class="btn-secondary">← Back</button>
+      <button (click)="goToPublishStep()" class="btn-primary" [disabled]="topics.length === 0">
+        Continue to Publish →
+      </button>
+    </div>
+  </div>
+
+  <!-- ========== STEP 3: REVIEW & PUBLISH ========== -->
+  <div *ngIf="currentStep === 'publish'" class="step-content">
+    <div class="panel">
+      <h2>📢 Review & Publish Course</h2>
+
+      <div class="review-summary">
+        <h3>{{ course.title }}</h3>
+        <p>{{ course.description }}</p>
+        
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-number">{{ topics.length }}</div>
+            <div class="stat-label">Topics</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ getTotalSubcontents() }}</div>
+            <div class="stat-label">Subcontents</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ getTotalVideos() }}</div>
+            <div class="stat-label">Videos</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ getTotalPDFs() }}</div>
+            <div class="stat-label">PDFs</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-number">{{ getTotalMCQs() }}</div>
+            <div class="stat-label">MCQ Tests</div>
+          </div>
+          <!-- Stats removed for simplicity -->
+        </div>
+
+        <div class="topics-summary">
+          <h4>Topics Overview:</h4>
+          <ul>
+            <li *ngFor="let topic of topics">
+              <strong>{{ topic.name }}</strong> - {{ topic.subcontents.length }} subcontents
+            </li>
+          </ul>
+        </div>
+      </div>
+
+      <!-- Warning removed -->
+
+      <div class="form-actions">
+        <button (click)="currentStep = 'topics'" class="btn-secondary">← Back to Edit</button>
+        <button (click)="publishCourse()" class="btn-publish" [disabled]="uploadingFile">
+          {{ uploadingFile ? 'Publishing...' : '🚀 Publish Course' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<!-- AI Quiz Generator Modal -->
+<div *ngIf="showAIQuizGenerator" class="modal-overlay" (click)="closeAIQuizGenerator()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <div class="modal-header">
+      <h2>🤖 AI Quiz Generator</h2>
+      <button class="modal-close" (click)="closeAIQuizGenerator()">&times;</button>
+    </div>
+    <div class="modal-body">
+      <app-ai-quiz-generator 
+        [courseId]="courseId || ''" 
+        [topicName]="selectedTopicForQuiz?.name || ''">
+      </app-ai-quiz-generator>
+    </div>
+  </div>
+</div>

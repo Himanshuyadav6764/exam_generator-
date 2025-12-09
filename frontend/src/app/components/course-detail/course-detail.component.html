@@ -1,0 +1,486 @@
+<div class="course-detail-container">
+  
+      <!-- Video Player Modal -->
+  <div *ngIf="showVideoPlayer" class="video-player-modal">
+    <div class="video-player-container">
+      <!-- Top Header -->
+      <div class="video-player-header">
+        <!-- Header Icons - Dynamic based on content type -->
+        <div class="header-content-icons">
+          <!-- Show only VIDEO icon when in video mode -->
+          <button class="header-icon-btn active" title="Video">
+            🎥 Video
+          </button>
+          <!-- Show only PDF icon for articles if available -->
+          <button *ngIf="currentSubcontent?.pdfUrls?.length" class="header-icon-btn" (click)="setContentType('articles')" title="Articles">
+            📄 Articles
+          </button>
+          <!-- Show only QUIZ icon for quizzes if available -->
+          <button *ngIf="currentSubcontent?.mcqCount && currentSubcontent?.mcqCount > 0" class="header-icon-btn" (click)="setContentType('quizzes')" title="Quizzes">
+            📝 Quizzes
+          </button>
+        </div>
+
+        <button class="close-player-btn" (click)="closeVideoPlayer()">
+          <i class="fas fa-times"></i>
+        </button>
+        <h2 class="video-title">{{ currentTopic?.name }}</h2>
+      </div>      <div class="video-player-wrapper">
+        <!-- Left Sidebar -->
+        <div class="video-sidebar" [class.collapsed]="sidebarCollapsed">
+          <div class="sidebar-header">
+            <div class="topic-progress-header">
+              <h3>{{ course.title }}</h3>
+              <div class="completion-badge">
+                <svg viewBox="0 0 36 36" class="circular-chart-green">
+                  <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <path class="circle" 
+                        [attr.stroke-dasharray]="progressPercentage + ', 100'"
+                        d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                  <text x="18" y="20.35" class="percentage">{{ progressPercentage }}%</text>
+                </svg>
+              </div>
+            </div>
+          </div>
+
+          <div class="sidebar-content">
+            <div class="videos-watched-info">
+              <p>Videos Watched</p>
+              <p class="watch-count">{{ currentVideoIndex + 1 }} of {{ allVideos.length }} Complete, ({{ progressPercentage }}%)</p>
+              <div class="progress-bar-small">
+                <div class="progress-bar-fill" [style.width.%]="progressPercentage"></div>
+              </div>
+              <p class="progress-note-small">Progress may take upto 2 hours to reflect</p>
+            </div>
+
+            <div class="video-list-section">
+              <div class="video-list-header">
+                <h4>Videos ({{ allVideos.length }})</h4>
+                <button class="btn-all-videos">All</button>
+              </div>
+
+              <div class="video-items-list">
+                <div *ngFor="let item of allVideos; let i = index" 
+                     class="video-item-sidebar"
+                     [class.active]="isCurrentVideo(item.video)"
+                     [class.completed]="i < currentVideoIndex"
+                     (click)="selectVideoFromSidebar(item)">
+                  <div class="video-item-info">
+                    <div class="video-check-icon">
+                      <i class="fas fa-check-circle" *ngIf="i < currentVideoIndex"></i>
+                      <i class="fas fa-play-circle" *ngIf="i >= currentVideoIndex"></i>
+                    </div>
+                    <div class="video-item-details">
+                      <p class="video-item-topic">{{ item.topic.name }}</p>
+                      <p class="video-item-title">{{ item.video.title }}</p>
+                      <span class="video-item-duration">
+                        <i class="fas fa-clock"></i> {{ item.video.duration || '6 min, 31 sec' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main Video Area -->
+        <div class="video-main-area">
+          <button class="toggle-sidebar-btn" (click)="toggleSidebar()">
+            <i class="fas" [class.fa-chevron-left]="!sidebarCollapsed" [class.fa-chevron-right]="sidebarCollapsed"></i>
+          </button>
+
+          <div class="video-container">
+            <video *ngIf="currentVideo" 
+                   [src]="currentVideo.url" 
+                   controls 
+                   autoplay
+                   class="video-player">
+              Your browser does not support the video tag.
+            </video>
+            
+            <div *ngIf="!currentVideo" class="no-video-msg">
+              <i class="fas fa-video-slash"></i>
+              <p>No video selected</p>
+            </div>
+          </div>
+
+          <!-- Video Navigation -->
+          <div class="video-navigation">
+            <button class="nav-btn" 
+                    [disabled]="!hasPrevVideo()" 
+                    (click)="playPrevVideo()">
+              <i class="fas fa-chevron-left"></i> Prev
+            </button>
+            <button class="nav-btn nav-btn-next" 
+                    [disabled]="!hasNextVideo()" 
+                    (click)="playNextVideo()">
+              Next Track <i class="fas fa-chevron-right"></i>
+            </button>
+          </div>
+
+          <!-- Video Info -->
+          <div class="video-info-section" *ngIf="currentVideo">
+            <h2>{{ currentVideo.title }}</h2>
+            <p class="video-description">{{ currentVideo.description || currentSubcontent?.name }}</p>
+            <div class="video-meta">
+              <span><i class="fas fa-folder"></i> Topic: {{ currentTopic?.name }}</span>
+              <span><i class="fas fa-book"></i> Subcontent: {{ currentSubcontent?.name }}</span>
+            </div>
+          </div>
+
+          <!-- Warning Banner -->
+          <div class="warning-banner">
+            <i class="fas fa-exclamation-circle"></i>
+            <span>You must watch the entire video without moving or skipping it for it to count towards your course progress.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <div class="course-header">
+    <button class="back-btn" (click)="goBack()">
+      <i class="fas fa-arrow-left"></i>
+      <span>Back</span>
+    </button>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-state">
+    <div class="spinner"></div>
+    <p>Loading course details...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error && !loading" class="error-state">
+    <i class="fas fa-exclamation-triangle"></i>
+    <p>{{ error }}</p>
+    <button class="btn-retry" (click)="loadCourseDetails()">Retry</button>
+  </div>
+
+  <!-- Course Content -->
+  <div *ngIf="!loading && !error && course" class="course-content">
+    
+    <!-- Top Header with Progress -->
+    <div class="course-top-header">
+      <h1 class="main-title">{{ course.title }}</h1>
+      <div class="progress-info">
+        <span class="progress-text">{{ getCompletedTopics() }} of {{ course.topics?.length || 0 }} Complete, ({{ progressPercentage }}%)</span>
+      </div>
+      <div class="progress-bar-full">
+        <div class="progress-bar-fill" [style.width.%]="progressPercentage"></div>
+      </div>
+      <p class="progress-note">Progress may take upto 2 hours to reflect.</p>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="course-tabs">
+      <button class="tab-btn" [class.active]="activeTab === 'chapters'" (click)="activeTab = 'chapters'">📚 CHAPTERS</button>
+      <button class="tab-btn" [class.active]="activeTab === 'notes'" (click)="activeTab = 'notes'">📝 NOTES</button>
+      <button class="tab-btn" [class.active]="activeTab === 'contest'" (click)="activeTab = 'contest'">🏆 CONTEST</button>
+      <button class="tab-btn" [class.active]="activeTab === 'placements'" (click)="activeTab = 'placements'">💼 PLACEMENTS</button>
+      <button class="tab-btn" [class.active]="activeTab === 'leaderboard'" (click)="activeTab = 'leaderboard'">🎯 LEADERBOARD</button>
+      <button class="tab-btn" [class.active]="activeTab === 'noticeboard'" (click)="activeTab = 'noticeboard'">📢 NOTICEBOARD</button>
+    </div>
+
+    <!-- Main Content Area -->
+    <div class="main-content-wrapper">
+      <!-- Left Content -->
+      <div class="left-content">
+        
+        <!-- NOTES TAB CONTENT -->
+        <div *ngIf="activeTab === 'notes'" class="notes-section">
+          <div class="notes-container">
+            <div class="notes-header">
+              <h2>📝 Your Course Notes</h2>
+              <p class="notes-subtitle">Keep track of important points and concepts from this course</p>
+            </div>
+            
+            <div class="notes-editor">
+              <textarea 
+                [(ngModel)]="studentNotes"
+                placeholder="Write your notes here... (Markdown supported)&#10;&#10;Tips:&#10;• Use **text** for bold&#10;• Use *text* for italic&#10;• Use - for bullet points&#10;• Use # for headings"
+                class="notes-input"
+                rows="15">
+              </textarea>
+              
+              <div class="notes-actions">
+                <button 
+                  (click)="saveStudentNotes()" 
+                  class="btn-save-notes"
+                  [disabled]="notesLoading">
+                  <i class="fas" [class.fa-spinner]="notesLoading" [class.fa-check]="notesSaved" [class.fa-save]="!notesLoading && !notesSaved"></i>
+                  {{ notesLoading ? 'Saving...' : notesSaved ? 'Saved!' : 'Save Notes' }}
+                </button>
+                <span class="notes-auto-save">Auto-saves to your browser</span>
+              </div>
+            </div>
+            
+            <div class="notes-info">
+              <i class="fas fa-info-circle"></i>
+              <p>Your notes are saved locally in your browser and synced with your account.</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- CHAPTERS TAB CONTENT -->
+        <div *ngIf="activeTab === 'chapters'">
+        
+        <!-- GFG Banner -->
+        <div class="gfg-banner" *ngIf="course.description">
+          <span class="banner-text">{{ course.description }}</span>
+          <i class="fas fa-chevron-right"></i>
+        </div>
+        <!-- Continue Where You Left -->
+        <div class="continue-section" *ngIf="weeklyStructure.length > 0 && weeklyStructure[currentWeek - 1]?.topics[0]">
+          <h2 class="section-heading">CONTINUE WHERE YOU LEFT</h2>
+          
+          <div class="current-topic-card">
+            <div class="topic-icon-green">
+              <i class="fas fa-book"></i>
+            </div>
+            <div class="topic-details-main">
+              <h3 class="topic-title-main">{{ weeklyStructure[currentWeek - 1].topics[0].name }}</h3>
+              <p class="topic-subtitle-main">
+                <i class="fas fa-play-circle"></i>
+                {{ getFirstSubcontentTitle(weeklyStructure[currentWeek - 1].topics[0]) }}
+              </p>
+            </div>
+            <div class="topic-progress-circle">
+              <svg viewBox="0 0 36 36" class="circular-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <path class="circle" 
+                      [attr.stroke-dasharray]="weeklyStructure[currentWeek - 1].topics[0].progress + ', 100'"
+                      d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                <text x="18" y="20.35" class="percentage">{{ weeklyStructure[currentWeek - 1].topics[0].progress }}%</text>
+              </svg>
+            </div>
+          </div>
+        </div>
+
+        <!-- Weekly Structure -->
+        <div class="weeks-section">
+          <div *ngFor="let week of weeklyStructure" class="week-container">
+            
+            <!-- Week Header -->
+            <div class="week-header" (click)="toggleWeek(week.weekNumber)">
+              <h2 class="week-title">Week {{ week.weekNumber }}</h2>
+              <i class="fas" 
+                 [class.fa-chevron-down]="!isWeekExpanded(week.weekNumber)"
+                 [class.fa-chevron-up]="isWeekExpanded(week.weekNumber)"></i>
+            </div>
+
+            <!-- Week Topics -->
+            <div class="week-content" *ngIf="isWeekExpanded(week.weekNumber)">
+              <div *ngFor="let topic of week.topics" class="topic-card-gfg">
+                
+                <!-- Topic Header -->
+                <div class="topic-card-header-gfg" (click)="toggleTopic(topic.name)">
+                  <div class="topic-left">
+                    <div class="topic-icon-box-gfg">
+                      <i class="fas fa-book"></i>
+                    </div>
+                    <div class="topic-info-gfg">
+                      <h3 class="topic-title-gfg">{{ topic.name }}</h3>
+                      <div class="topic-stats-gfg">
+                        <span class="stat-item-gfg" *ngIf="topic.videos > 0">
+                          <i class="fas fa-play-circle"></i>
+                          {{ topic.videos }} Videos
+                        </span>
+                        <span class="stat-item-gfg" *ngIf="topic.articles > 0">
+                          <i class="fas fa-file-alt"></i>
+                          {{ topic.articles }} Articles
+                        </span>
+                        <span class="stat-item-gfg" *ngIf="topic.problems > 0">
+                          <i class="fas fa-code"></i>
+                          {{ topic.problems }} Problems
+                        </span>
+                        <span class="stat-item-gfg" *ngIf="topic.mcqs > 0">
+                          <i class="fas fa-question-circle"></i>
+                          {{ topic.mcqs }} MCQ's
+                        </span>
+                        <span class="stat-item-gfg" *ngIf="topic.contests > 0">
+                          <i class="fas fa-trophy"></i>
+                          {{ topic.contests }} Contest
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div class="topic-right">
+                    <div class="progress-circle-gfg">
+                      <svg viewBox="0 0 36 36" class="circular-chart-green">
+                        <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <path class="circle" 
+                              [attr.stroke-dasharray]="topic.progress + ', 100'"
+                              d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"/>
+                        <text x="18" y="20.35" class="percentage">{{ topic.progress }}%</text>
+                      </svg>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Expanded Content -->
+                <div class="topic-expanded-content-gfg" *ngIf="isTopicExpanded(topic.name)">
+                  <div *ngFor="let subcontent of topic.subcontents" class="subcontent-section-gfg">
+                <h4 class="subcontent-title">
+                  <i class="fas fa-bookmark"></i>
+                  {{ subcontent.name }}
+                </h4>
+                <p class="subcontent-desc" *ngIf="subcontent.description">{{ subcontent.description }}</p>
+
+                <!-- Videos -->
+                <div *ngIf="subcontent.videoUrls && subcontent.videoUrls.length > 0" class="content-list">
+                  <h5 class="content-type-heading">
+                    <i class="fas fa-video"></i>
+                    Videos ({{ subcontent.videoUrls.length }})
+                  </h5>
+                  <div class="content-items">
+                    <div *ngFor="let videoUrl of subcontent.videoUrls; let videoIdx = index" class="content-item video-item">
+                      <i class="fas fa-play-circle item-icon"></i>
+                      <span class="item-title">{{ subcontent.videoFileNames?.[videoIdx] || 'Video ' + (videoIdx + 1) }}</span>
+                      <button class="btn-watch" (click)="playVideo({ url: videoUrl, title: subcontent.videoFileNames?.[videoIdx] || 'Video ' + (videoIdx + 1), id: videoIdx }, subcontent, topic)">Watch</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- PDFs -->
+                <div *ngIf="subcontent.pdfUrls && subcontent.pdfUrls.length > 0" class="content-list">
+                  <h5 class="content-type-heading">
+                    <i class="fas fa-file-pdf"></i>
+                    Study Materials ({{ subcontent.pdfUrls.length }})
+                  </h5>
+                  <div class="content-items">
+                    <div *ngFor="let pdfUrl of subcontent.pdfUrls; let pdfIdx = index" class="content-item pdf-item">
+                      <i class="fas fa-file-pdf item-icon"></i>
+                      <span class="item-title">{{ subcontent.pdfFileNames?.[pdfIdx] || 'Document ' + (pdfIdx + 1) }}</span>
+                      <button class="btn-read" (click)="openPDF({ url: pdfUrl, title: subcontent.pdfFileNames?.[pdfIdx] })">Read</button>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- MCQs -->
+                <div *ngIf="subcontent.mcqCount && subcontent.mcqCount > 0" class="content-list">
+                  <h5 class="content-type-heading">
+                    <i class="fas fa-question-circle"></i>
+                    Practice Quiz ({{ subcontent.mcqCount }} Questions)
+                  </h5>
+                  <div class="quiz-action">
+                    <button class="btn-quiz" (click)="startQuiz(subcontent)">
+                      <i class="fas fa-play"></i>
+                      Start Quiz
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+                  <div *ngIf="topic.subcontents.length === 0" class="no-content-msg">
+                    <i class="fas fa-info-circle"></i>
+                    <p>No detailed content available yet</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div *ngIf="weeklyStructure.length === 0" class="no-weeks">
+            <i class="fas fa-calendar-times"></i>
+            <p>No learning schedule available for this course</p>
+          </div>
+        </div>
+        </div>
+      </div>
+
+      <!-- Right Sidebar -->
+      <div class="right-sidebar">
+        <!-- Course Completion Metrics Card -->
+        <div class="completion-metrics-card">
+          <div class="metrics-header">
+            <h3>📊 Course Progress</h3>
+            <span class="completion-percentage">{{ overallScore }}%</span>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon overall-score">⚡</div>
+            <div class="metric-content">
+              <div class="metric-label">OVERALL SCORE</div>
+              <div class="metric-value">{{ overallScore }}%</div>
+            </div>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon time-spent">⏱️</div>
+            <div class="metric-content">
+              <div class="metric-label">TIME SPENT</div>
+              <div class="metric-value">{{ timeSpent }}m</div>
+            </div>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon quizzes">📝</div>
+            <div class="metric-content">
+              <div class="metric-label">QUIZZES</div>
+              <div class="metric-value">{{ quizzesCompleted }} / {{ totalQuizzes }}</div>
+            </div>
+          </div>
+          
+          <div class="metric-item">
+            <div class="metric-icon current-level">⭐</div>
+            <div class="metric-content">
+              <div class="metric-label">CURRENT LEVEL</div>
+              <div class="metric-value level-badge" [ngClass]="'level-' + currentLevel.toLowerCase()">{{ currentLevel }}</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Schedule Card -->
+        <div class="schedule-card">
+          <div class="schedule-header">
+            <h3>Your Schedule</h3>
+            <i class="fas fa-ellipsis-v"></i>
+          </div>
+          <div class="schedule-dates">
+            <div class="date-item">
+              <i class="fas fa-play"></i>
+              <span>Start date : {{ currentWeek === 1 ? '26 September, 2025' : 'Week ' + currentWeek }}</span>
+            </div>
+            <div class="date-item">
+              <i class="fas fa-flag"></i>
+              <span>End date : 26 December, 2025</span>
+            </div>
+          </div>
+          <div class="schedule-goal">
+            <p><strong>Goal:</strong> Learn 7 days a week for 14 hours.</p>
+            <div class="week-days-badges">
+              <span class="day-badge-gfg" *ngFor="let day of ['M', 'T', 'W', 'T', 'F', 'S', 'S']">{{ day }}</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Career Banner -->
+        <div class="career-banner">
+          <div class="banner-content-gfg">
+            <div class="gfg-logo">GfG</div>
+            <h3>Turn your<br>learnings into<br>a <span class="highlight">career move</span></h3>
+            <button class="get-btn">Get</button>
+          </div>
+          <div class="banner-features">
+            <div class="feature-badge">
+              <i class="fas fa-check-circle"></i>
+              Mock Interviews from<br><strong>Google Experts</strong>
+            </div>
+            <div class="feature-badge">
+              <i class="fas fa-check-circle"></i>
+              Career counselling
+            </div>
+            <div class="feature-badge">
+              <i class="fas fa-check-circle"></i>
+              1:1 Mentorship
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

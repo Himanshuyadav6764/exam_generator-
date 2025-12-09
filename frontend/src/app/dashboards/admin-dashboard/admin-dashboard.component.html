@@ -3,6 +3,12 @@
     <div class="nav-brand">
       <h2>🛠️ Admin Portal</h2>
     </div>
+    <div class="nav-menu">
+      <a routerLink="/dashboard" routerLinkActive="active">Dashboard</a>
+      <a routerLink="/subjects" routerLinkActive="active">Subjects</a>
+      <a routerLink="/subjects/new" routerLinkActive="active">New Subject</a>
+      <a routerLink="/search" routerLinkActive="active">Search</a>
+    </div>
     <div class="nav-user">
       <span class="user-name">{{ fullName }}</span>
       <button class="logout-btn" (click)="logout()">Logout</button>

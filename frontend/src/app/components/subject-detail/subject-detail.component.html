@@ -1,0 +1,176 @@
+<div class="subject-detail-container" *ngIf="!isLoading && subjectContent">
+  <!-- Header -->
+  <div class="header-section">
+    <button class="btn-back" (click)="goBack()">← Back to Subjects</button>
+    
+    <div class="subject-header">
+      <div class="subject-thumbnail" *ngIf="subjectContent.subject.thumbnail">
+        <img [src]="subjectContent.subject.thumbnail" [alt]="subjectContent.subject.title">
+      </div>
+      
+      <div class="subject-info">
+        <div class="difficulty-badge" [ngClass]="getDifficultyClass(subjectContent.subject.difficulty)">
+          {{ getDifficultyIcon(subjectContent.subject.difficulty) }} {{ subjectContent.subject.difficulty }}
+        </div>
+        
+        <h1>{{ subjectContent.subject.title }}</h1>
+        <p class="description">{{ subjectContent.subject.description }}</p>
+        
+        <div class="meta-info">
+          <span class="instructor">👨‍🏫 {{ subjectContent.subject.instructorName }}</span>
+          <span class="status" [class.published]="subjectContent.subject.status === 'PUBLISHED'">
+            {{ subjectContent.subject.status }}
+          </span>
+        </div>
+
+        <!-- Stats -->
+        <div class="stats-row">
+          <div class="stat">
+            <span class="stat-icon">📚</span>
+            <span class="stat-value">{{ subjectContent.topicCount }}</span>
+            <span class="stat-label">Topics</span>
+          </div>
+          <div class="stat">
+            <span class="stat-icon">🎥</span>
+            <span class="stat-value">{{ subjectContent.totalVideos }}</span>
+            <span class="stat-label">Videos</span>
+          </div>
+          <div class="stat">
+            <span class="stat-icon">📄</span>
+            <span class="stat-value">{{ subjectContent.totalPDFs }}</span>
+            <span class="stat-label">PDFs</span>
+          </div>
+          <div class="stat">
+            <span class="stat-icon">❓</span>
+            <span class="stat-value">{{ subjectContent.totalMCQs }}</span>
+            <span class="stat-label">MCQs</span>
+          </div>
+        </div>
+
+        <div class="action-buttons" *ngIf="canEdit()">
+          <button class="btn-action btn-edit" (click)="editSubject()">✏️ Edit Subject</button>
+          <button class="btn-action btn-manage" (click)="manageTopics()">🔧 Manage Topics</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn-expand" (click)="expandAll()">▼ Expand All</button>
+    <button class="btn-collapse" (click)="collapseAll()">▲ Collapse All</button>
+  </div>
+
+  <!-- Topics List -->
+  <div class="topics-container">
+    <div *ngIf="subjectContent.topics.length === 0" class="no-content">
+      <p>No topics added yet.</p>
+      <button *ngIf="canEdit()" class="btn-action" (click)="manageTopics()">Add Topics</button>
+    </div>
+
+    <div *ngFor="let topicData of subjectContent.topics" class="topic-section">
+      <div class="topic-header" (click)="toggleTopic(topicData.topic.id!)">
+        <div class="topic-title-group">
+          <span class="expand-icon">{{ isTopicExpanded(topicData.topic.id!) ? '▼' : '▶' }}</span>
+          <h3 class="topic-title">{{ topicData.topic.name }}</h3>
+          <span class="topic-index">#{{ topicData.topic.orderIndex }}</span>
+        </div>
+        
+        <div class="topic-badges">
+          <span class="badge">🎥 {{ topicData.videoCount }}</span>
+          <span class="badge">📄 {{ topicData.pdfCount }}</span>
+          <span class="badge">❓ {{ topicData.mcqCount }}</span>
+        </div>
+      </div>
+
+      <div *ngIf="topicData.topic.description" class="topic-description">
+        {{ topicData.topic.description }}
+      </div>
+
+      <!-- Expanded Content -->
+      <div *ngIf="isTopicExpanded(topicData.topic.id!)" class="topic-content">
+        
+        <!-- Videos Section -->
+        <div class="content-section" *ngIf="topicData.videos.length > 0 || canEdit()">
+          <div class="section-header">
+            <h4>🎥 Videos</h4>
+            <button *ngIf="canEdit()" class="btn-add" (click)="addVideo(topicData.topic.id!)">+ Add Video</button>
+          </div>
+          
+          <div class="items-grid">
+            <div *ngFor="let video of topicData.videos" class="content-item video-item">
+              <div class="item-thumbnail" *ngIf="video.thumbnailUrl">
+                <img [src]="video.thumbnailUrl" [alt]="video.title">
+                <div class="play-overlay" (click)="playVideo(video.id!)">▶</div>
+              </div>
+              <div class="item-info">
+                <h5>{{ video.title }}</h5>
+                <p *ngIf="video.description">{{ video.description }}</p>
+                <div class="item-meta">
+                  <span *ngIf="video.duration">⏱️ {{ formatDuration(video.duration) }}</span>
+                  <span *ngIf="video.isPreview" class="preview-badge">🔓 Free Preview</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- PDFs Section -->
+        <div class="content-section" *ngIf="topicData.pdfs.length > 0 || canEdit()">
+          <div class="section-header">
+            <h4>📄 PDF Materials</h4>
+            <button *ngIf="canEdit()" class="btn-add" (click)="addPDF(topicData.topic.id!)">+ Add PDF</button>
+          </div>
+          
+          <div class="items-list">
+            <div *ngFor="let pdf of topicData.pdfs" class="content-item pdf-item">
+              <div class="pdf-icon">📄</div>
+              <div class="item-info">
+                <h5>{{ pdf.title }}</h5>
+                <p *ngIf="pdf.description">{{ pdf.description }}</p>
+                <div class="item-meta">
+                  <span *ngIf="pdf.pages">📖 {{ pdf.pages }} pages</span>
+                  <span *ngIf="pdf.fileSize">💾 {{ formatFileSize(pdf.fileSize) }}</span>
+                </div>
+              </div>
+              <div class="pdf-actions">
+                <button class="btn-view" (click)="viewPDF(pdf.url)">👁️ View</button>
+                <button *ngIf="pdf.isDownloadable" class="btn-download" (click)="downloadPDF(pdf.url, pdf.title)">
+                  ⬇️ Download
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- MCQs Section -->
+        <div class="content-section" *ngIf="topicData.mcqs.length > 0 || canEdit()">
+          <div class="section-header">
+            <h4>❓ Practice Questions ({{ topicData.mcqCount }} MCQs)</h4>
+            <button *ngIf="canEdit()" class="btn-add" (click)="addMCQ(topicData.topic.id!)">+ Add MCQ</button>
+          </div>
+          
+          <div class="mcq-summary">
+            <p>Test your knowledge with {{ topicData.mcqCount }} multiple choice questions.</p>
+            <button class="btn-quiz" (click)="takeMCQQuiz(topicData.topic.id!)">
+              🎯 Start Quiz
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Loading State -->
+<div *ngIf="isLoading" class="loading">
+  <div class="spinner"></div>
+  <p>Loading subject content...</p>
+</div>
+
+<!-- Error State -->
+<div *ngIf="errorMessage" class="error">
+  <p>{{ errorMessage }}</p>
+  <button class="btn-retry" (click)="loadSubjectContent()">Retry</button>
+</div>

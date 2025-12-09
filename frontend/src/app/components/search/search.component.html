@@ -1,0 +1,162 @@
+<div class="search-container">
+  <div class="search-header">
+    <h1>🔍 Search Courses & Content</h1>
+    <p>Find courses, topics, and learning materials</p>
+  </div>
+
+  <div class="search-box">
+    <div class="search-input-wrapper">
+      <span class="search-icon">🔍</span>
+      <input 
+        type="text" 
+        class="search-input"
+        placeholder="Search for courses, topics, content..."
+        [(ngModel)]="searchQuery"
+        (input)="onSearchChange($event)"
+        autofocus
+      />
+      <button 
+        *ngIf="searchQuery" 
+        class="clear-btn"
+        (click)="clearSearch()"
+        title="Clear search">
+        ✕
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Searching...</p>
+  </div>
+
+  <!-- Error State -->
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Initial State -->
+  <div *ngIf="!loading && !hasSearched" class="initial-state">
+    <div class="search-illustration">🔍</div>
+    <h2>Start searching</h2>
+    <p>Enter keywords to search across all content</p>
+    
+    <div class="search-tips">
+      <h3>Search tips:</h3>
+      <ul>
+        <li>✓ Search by subject name, topic, or content title</li>
+        <li>✓ Use specific keywords for better results</li>
+        <li>✓ Try different variations if you don't find what you're looking for</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- Results -->
+  <div *ngIf="!loading && hasSearched && !error" class="results-container">
+    <div *ngIf="getTotalResults() === 0" class="no-results">
+      <span class="icon">🔍</span>
+      <h2>No results found for "{{ searchQuery }}"</h2>
+      <p>Try different keywords or check your spelling</p>
+    </div>
+
+    <div *ngIf="getTotalResults() > 0" class="results-summary">
+      <h3>Found {{ getTotalResults() }} result<span *ngIf="getTotalResults() !== 1">s</span> for "{{ searchQuery }}"</h3>
+    </div>
+
+    <!-- Courses -->
+    <div *ngIf="searchResults.courses && searchResults.courses.length > 0" class="results-section">
+      <h2 class="section-title">
+        <span class="icon">📚</span>
+        Courses ({{ searchResults.courses.length }})
+      </h2>
+      <div class="results-grid">
+        <div 
+          *ngFor="let course of searchResults.courses" 
+          class="result-card course-card">
+          <div class="card-header">
+            <img 
+              *ngIf="course.thumbnail" 
+              [src]="course.thumbnail" 
+              [alt]="course.title"
+              class="thumbnail"
+            />
+            <div class="placeholder-thumbnail" *ngIf="!course.thumbnail">
+              📚
+            </div>
+            <span class="difficulty-badge" [ngClass]="'difficulty-' + course.difficulty?.toLowerCase()">
+              {{ course.difficulty }}
+            </span>
+          </div>
+          <div class="card-body">
+            <h3>{{ course.title }}</h3>
+            <p class="description">{{ course.description }}</p>
+            <div class="course-meta">
+              <span class="meta-item">
+                <span class="icon">👨‍🏫</span>
+                {{ course.instructorName }}
+              </span>
+              <span class="meta-item" *ngIf="course.subjects && course.subjects.length > 0">
+                <span class="icon">📖</span>
+                {{ course.subjects.join(', ') }}
+              </span>
+            </div>
+          </div>
+          <div class="card-footer">
+            <button class="view-btn" (click)="viewCourse(course.id)">
+              View Course →
+            </button>
+            <button class="details-btn" (click)="viewCourseDetails(course.id)">
+              ℹ️ Details
+            </button>
+            <button class="add-recommendation-btn" (click)="addToRecommendations(course.id, course.title)" title="Add to Recommendations">
+              ⭐ Add to Recommendations
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Topics & Subcontents -->
+    <div *ngIf="searchResults.topics && searchResults.topics.length > 0" class="results-section">
+      <h2 class="section-title">
+        <span class="icon">📖</span>
+        Topics & Content ({{ searchResults.topics.length }})
+      </h2>
+      <div class="results-list">
+        <div 
+          *ngFor="let item of searchResults.topics" 
+          class="result-item"
+          [ngClass]="item.type"
+          (click)="viewTopic(item)">
+          <div class="item-icon">
+            <span *ngIf="item.type === 'topic'">📖</span>
+            <span *ngIf="item.type === 'subcontent'">📝</span>
+          </div>
+          <div class="item-content">
+            <h4>{{ item.name }}</h4>
+            <p class="item-meta">
+              <span class="course-name">
+                <strong>Course:</strong> {{ item.courseTitle }}
+              </span>
+              <span *ngIf="item.topicName" class="topic-name">
+                <strong>Topic:</strong> {{ item.topicName }}
+              </span>
+            </p>
+            <p *ngIf="item.description" class="item-description">{{ item.description }}</p>
+            <div *ngIf="item.type === 'subcontent'" class="resources">
+              <span class="resource-badge" *ngIf="item.videoCount > 0">
+                🎥 {{ item.videoCount }} Video<span *ngIf="item.videoCount !== 1">s</span>
+              </span>
+              <span class="resource-badge" *ngIf="item.pdfCount > 0">
+                📄 {{ item.pdfCount }} PDF<span *ngIf="item.pdfCount !== 1">s</span>
+              </span>
+            </div>
+          </div>
+          <div class="item-arrow">→</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

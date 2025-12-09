@@ -1,0 +1,107 @@
+<div class="topic-management-container">
+  <div class="header">
+    <button class="btn-back" (click)="goBack()">
+      <span>←</span> Back to Subject
+    </button>
+    <div class="header-content">
+      <h1>📚 Course Topics</h1>
+      <p class="subtitle" *ngIf="subject">{{ subject.title }}</p>
+    </div>
+  </div>
+
+  <div *ngIf="loading && topics.length === 0" class="loading">
+    <div class="spinner"></div>
+    <p>Loading topics...</p>
+  </div>
+
+  <div *ngIf="successMessage" class="success-message">
+    <span class="icon">✅</span>
+    <span>{{ successMessage }}</span>
+  </div>
+
+  <div *ngIf="error" class="error-message">
+    <span class="icon">⚠️</span>
+    <span>{{ error }}</span>
+  </div>
+
+  <!-- Simple Add Topic Form -->
+  <div class="add-topic-section" *ngIf="canManageTopics()">
+    <h3>Add New Topic</h3>
+    <div class="topic-form">
+      <input 
+        type="text" 
+        [(ngModel)]="newTopicName" 
+        placeholder="e.g., Variables, Data Types, Basic Syntax"
+        class="topic-input"
+        (keyup.enter)="addTopic()">
+      <button class="btn-add" (click)="addTopic()" [disabled]="!newTopicName.trim()">
+        ➕ Add Topic
+      </button>
+    </div>
+    <p class="hint">💡 Add topics one by one to organize your course content</p>
+  </div>
+
+  <!-- Topics List -->
+  <div class="topics-list">
+    <h3 class="list-title">Course Topics <span class="count">({{ topics.length }} topics)</span></h3>
+    
+    <div *ngIf="topics.length === 0 && !loading" class="empty-state">
+      <span class="icon">📚</span>
+      <h3>No Topics Yet</h3>
+      <p>Start by adding topics to this subject</p>
+    </div>
+
+    <div *ngFor="let topic of topics; let i = index" class="topic-card">
+      <!-- View Mode -->
+      <div *ngIf="editingTopicId !== topic.id" class="topic-view">
+        <div class="topic-header">
+          <div class="topic-info">
+            <h3>{{ i + 1 }}. {{ topic.name }}</h3>
+            <p *ngIf="topic.description">{{ topic.description }}</p>
+          </div>
+
+          <div class="topic-actions" *ngIf="canManageTopics()">
+            <button class="btn-icon btn-edit" (click)="startEdit(topic)" title="Edit">
+              ✏️
+            </button>
+            <button class="btn-icon btn-delete" (click)="deleteTopic(topic.id!)" title="Delete">
+              🗑️
+              </button>
+            </div>
+
+            <!-- View Content Button -->
+            <button class="btn btn-view" (click)="viewTopicContent(topic.id!)">
+              View Content
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Edit Mode -->
+      <div *ngIf="editingTopicId === topic.id" class="topic-edit">
+        <div class="edit-form">
+          <div class="form-group">
+            <label>Topic Name</label>
+            <input 
+              type="text" 
+              [(ngModel)]="editingName" 
+              placeholder="Topic name">
+          </div>
+
+          <div class="form-group">
+            <label>Description</label>
+            <textarea 
+              [(ngModel)]="editingDescription" 
+              rows="3" 
+              placeholder="Topic description"></textarea>
+          </div>
+
+          <div class="edit-actions">
+            <button class="btn btn-cancel" (click)="cancelEdit()">Cancel</button>
+            <button class="btn btn-submit" (click)="saveEdit()">Save Changes</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

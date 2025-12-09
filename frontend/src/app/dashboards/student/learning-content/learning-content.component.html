@@ -1,0 +1,338 @@
+<div class="learning-container">
+    <!-- Header -->
+    <header class="learning-header">
+        <div class="header-left">
+            <button class="btn-back" (click)="goBack()">
+                <i class="fas fa-arrow-left"></i> Back to Dashboard
+            </button>
+            <h1>{{ courseName || course?.title }}</h1>
+        </div>
+        <div class="header-right">
+            <div class="progress-indicator">
+                <span>Progress: {{ getProgressPercentage() }}%</span>
+                <div class="progress-bar-small">
+                    <div class="progress-fill-small" [style.width.%]="getProgressPercentage()"></div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <div class="learning-layout" *ngIf="!loading && course">
+        <!-- Sidebar - Topics List -->
+        <aside class="topics-sidebar">
+            <h3><i class="fas fa-list"></i> Course Topics</h3>
+            
+            <div class="topics-list">
+                <div *ngFor="let topic of course.topics" 
+                     class="topic-item"
+                     [class.active]="selectedTopic === topic"
+                     (click)="selectTopic(topic)">
+                    <div class="topic-header">
+                        <i class="fas fa-book"></i>
+                        <span>{{ topic }}</span>
+                    </div>
+                    
+                    <!-- Subtopics -->
+                    <div class="subtopics-list" *ngIf="selectedTopic === topic">
+                        <div *ngFor="let subtopic of getSubtopicsForTopic(topic)"
+                             class="subtopic-item"
+                             [class.active]="selectedSubtopic === subtopic"
+                             [class.completed]="isSubtopicCompleted(topic, subtopic)"
+                             (click)="selectSubtopic(subtopic); $event.stopPropagation()">
+                            <div class="subtopic-icon">
+                                <i class="fas fa-check-circle completed-icon" *ngIf="isSubtopicCompleted(topic, subtopic)"></i>
+                                <i class="fas fa-play-circle" *ngIf="subtopic.videoUrl && !isSubtopicCompleted(topic, subtopic)"></i>
+                                <i class="fas fa-file-pdf" *ngIf="subtopic.pdfUrl && !subtopic.videoUrl && !isSubtopicCompleted(topic, subtopic)"></i>
+                            </div>
+                            <span>{{ subtopic.title }}</span>
+                        </div>
+                        
+                        <!-- MCQ Option -->
+                        <div class="subtopic-item mcq-option" 
+                             [class.active]="showingMcq"
+                             (click)="loadMcqForTopic(); $event.stopPropagation()">
+                            <i class="fas fa-clipboard-question"></i>
+                            <span>Practice MCQs</span>
+                            <span class="badge-quiz">Quiz</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content Area -->
+        <main class="content-area">
+            <!-- Welcome State -->
+            <div *ngIf="!showingVideo && !showingPdf && !showingMcq" class="welcome-state">
+                <i class="fas fa-graduation-cap"></i>
+                <h2>Welcome to {{ course.title }}</h2>
+                <p class="welcome-subtitle">Select a topic from the left sidebar to start learning</p>
+                
+                <!-- Course Description -->
+                <div class="course-description-box" *ngIf="course.description">
+                    <h3><i class="fas fa-info-circle"></i> About This Course</h3>
+                    <p>{{ course.description }}</p>
+                </div>
+                
+                <div class="course-info">
+                    <div class="info-card">
+                        <i class="fas fa-layer-group"></i>
+                        <span>{{ course.topics?.length || 0 }} Topics</span>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-signal"></i>
+                        <span>{{ course.difficulty || 'Beginner' }}</span>
+                    </div>
+                    <div class="info-card">
+                        <i class="fas fa-user-tie"></i>
+                        <span>{{ course.instructorName || 'Instructor' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Player -->
+            <div *ngIf="showingVideo" class="video-container">
+                <h2>{{ selectedSubtopic?.title }}</h2>
+                <div class="video-wrapper">
+                    <iframe [src]="currentVideoUrl" 
+                            frameborder="0" 
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+                            allowfullscreen>
+                    </iframe>
+                </div>
+                <div class="content-description" *ngIf="selectedSubtopic?.description">
+                    <h3><i class="fas fa-info-circle"></i> Description</h3>
+                    <p>{{ selectedSubtopic.description }}</p>
+                </div>
+                
+                <!-- Course Description -->
+                <div class="content-description" *ngIf="course.description && !selectedSubtopic?.description">
+                    <h3><i class="fas fa-book"></i> Course Overview</h3>
+                    <p>{{ course.description }}</p>
+                </div>
+            </div>
+
+            <!-- PDF Viewer -->
+            <div *ngIf="showingPdf" class="pdf-container">
+                <h2>{{ selectedSubtopic?.title }}</h2>
+                <div class="pdf-wrapper">
+                    <iframe [src]="currentPdfUrl" frameborder="0"></iframe>
+                </div>
+                
+                <!-- PDF Description -->
+                <div class="content-description" *ngIf="selectedSubtopic?.description">
+                    <h3><i class="fas fa-info-circle"></i> Description</h3>
+                    <p>{{ selectedSubtopic.description }}</p>
+                </div>
+                
+                <!-- Course Description -->
+                <div class="content-description" *ngIf="course.description && !selectedSubtopic?.description">
+                    <h3><i class="fas fa-book"></i> Course Overview</h3>
+                    <p>{{ course.description }}</p>
+                </div>
+            </div>
+
+            <!-- MCQ Quiz -->
+            <div *ngIf="showingMcq" class="mcq-container">
+                <!-- Loading State -->
+                <div *ngIf="mcqLoading" class="mcq-loading">
+                    <div class="spinner"></div>
+                    <p>Loading quiz questions...</p>
+                </div>
+
+                <!-- Error State -->
+                <div *ngIf="mcqError && !mcqLoading" class="mcq-error">
+                    <i class="fas fa-info-circle"></i>
+                    <h3>{{ mcqError }}</h3>
+                    <button class="btn-primary" (click)="resetContentDisplay()">
+                        <i class="fas fa-arrow-left"></i> Back to Learning
+                    </button>
+                </div>
+
+                <!-- Quiz Content -->
+                <div *ngIf="!mcqLoading && !mcqError && mcqQuestions.length > 0">
+                    <div class="mcq-header">
+                        <div class="header-title">
+                            <h2><i class="fas fa-clipboard-list"></i> Practice Quiz - {{ selectedTopic }}</h2>
+                            <div class="question-counter">
+                                <span class="current-q">Question {{ currentQuestionIndex + 1 }}</span>
+                                <span class="separator">/</span>
+                                <span class="total-q">{{ mcqQuestions.length }}</span>
+                            </div>
+                        </div>
+                        
+                        <!-- Timer -->
+                        <div class="quiz-timer" *ngIf="!quizSubmitted" [style.color]="getTimerColor()">
+                            <i class="fas fa-clock"></i>
+                            <span class="timer-text">{{ getTimerDisplay() }}</span>
+                        </div>
+                    </div>
+
+                    <div class="mcq-content" *ngIf="!quizSubmitted">
+                        <div class="question-card">
+                            <div class="question-badge">Q{{ currentQuestionIndex + 1 }}</div>
+                            <h3>{{ mcqQuestions[currentQuestionIndex]?.question }}</h3>
+                        </div>
+
+                        <div class="options-grid">
+                            <div *ngFor="let option of mcqQuestions[currentQuestionIndex]?.options; let i = index"
+                                 class="option-card"
+                                 [class.selected]="userAnswers[currentQuestionIndex] === i"
+                                 (click)="selectAnswer(currentQuestionIndex, i)">
+                                <div class="option-indicator">
+                                    <span class="option-letter">{{ String.fromCharCode(65 + i) }}</span>
+                                    <i class="fas fa-check-circle check-icon"></i>
+                                </div>
+                                <span class="option-text">{{ option }}</span>
+                            </div>
+                        </div>
+
+                        <div class="mcq-navigation">
+                            <button class="btn-nav btn-prev" 
+                                    [disabled]="currentQuestionIndex === 0"
+                                    (click)="previousQuestion()">
+                                <i class="fas fa-chevron-left"></i> Previous
+                            </button>
+                            
+                            <div class="progress-dots">
+                                <span *ngFor="let q of mcqQuestions; let i = index"
+                                      class="dot"
+                                      [class.active]="i === currentQuestionIndex"
+                                      [class.answered]="userAnswers[i] !== undefined"
+                                      (click)="currentQuestionIndex = i">
+                                </span>
+                            </div>
+                            
+                            <button class="btn-nav btn-next" 
+                                    *ngIf="currentQuestionIndex < mcqQuestions.length - 1"
+                                    (click)="nextQuestion()">
+                                Next <i class="fas fa-chevron-right"></i>
+                            </button>
+                            
+                            <button class="btn-submit-quiz" 
+                                    *ngIf="currentQuestionIndex === mcqQuestions.length - 1"
+                                    (click)="submitQuiz()">
+                                <i class="fas fa-paper-plane"></i> Submit Quiz
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Quiz Results -->
+                    <div class="quiz-results" *ngIf="quizSubmitted">
+                        <div class="results-header">
+                            <div class="trophy-icon">
+                                <i class="fas fa-trophy"></i>
+                            </div>
+                            <h2>Quiz Completed!</h2>
+                            <p class="congrats-text">Great job completing the quiz</p>
+                        </div>
+
+                        <!-- Score Cards -->
+                        <div class="score-cards-grid">
+                            <div class="score-card primary">
+                                <div class="score-icon">
+                                    <i class="fas fa-star"></i>
+                                </div>
+                                <div class="score-info">
+                                    <span class="score-label">Total Score</span>
+                                    <span class="score-value">{{ quizScore }}%</span>
+                                </div>
+                            </div>
+
+                            <div class="score-card success">
+                                <div class="score-icon">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="score-info">
+                                    <span class="score-label">Correct Answers</span>
+                                    <span class="score-value">{{ getCorrectAnswersCount() }}/{{ mcqQuestions.length }}</span>
+                                </div>
+                            </div>
+
+                            <div class="score-card danger">
+                                <div class="score-icon">
+                                    <i class="fas fa-times-circle"></i>
+                                </div>
+                                <div class="score-info">
+                                    <span class="score-label">Wrong Answers</span>
+                                    <span class="score-value">{{ getWrongAnswersCount() }}</span>
+                                </div>
+                            </div>
+
+                            <div class="score-card info">
+                                <div class="score-icon">
+                                    <i class="fas fa-clock"></i>
+                                </div>
+                                <div class="score-info">
+                                    <span class="score-label">Time Taken</span>
+                                    <span class="score-value">{{ getTimeTaken() }}</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Performance Message -->
+                        <div class="performance-message" 
+                             [class.excellent]="quizScore >= 80"
+                             [class.good]="quizScore >= 60 && quizScore < 80"
+                             [class.needs-improvement]="quizScore < 60">
+                            <span *ngIf="quizScore >= 80">🎉 Excellent work! You've mastered this topic!</span>
+                            <span *ngIf="quizScore >= 60 && quizScore < 80">👍 Good job! Keep practicing to improve.</span>
+                            <span *ngIf="quizScore < 60">💪 Keep trying! Review the material and try again.</span>
+                        </div>
+
+                        <div class="answers-review">
+                            <h3><i class="fas fa-list-check"></i> Review Your Answers</h3>
+                            <div *ngFor="let question of mcqQuestions; let i = index" 
+                                 class="answer-item"
+                                 [class.correct]="userAnswers[i] === question.correctAnswer"
+                                 [class.incorrect]="userAnswers[i] !== question.correctAnswer">
+                                <div class="answer-header">
+                                    <span class="question-number">Question {{ i + 1 }}</span>
+                                    <span class="answer-status">
+                                        <i class="fas fa-check-circle" *ngIf="userAnswers[i] === question.correctAnswer"></i>
+                                        <i class="fas fa-times-circle" *ngIf="userAnswers[i] !== question.correctAnswer"></i>
+                                    </span>
+                                </div>
+                                <p class="question-text">{{ question.question }}</p>
+                                <div class="answer-details">
+                                    <p class="your-answer" *ngIf="userAnswers[i] !== undefined">
+                                        <strong>Your Answer:</strong> 
+                                        {{ String.fromCharCode(65 + userAnswers[i]) }}) 
+                                        {{ question.options[userAnswers[i]] }}
+                                    </p>
+                                    <p class="correct-answer">
+                                        <strong>Correct Answer:</strong> 
+                                        {{ String.fromCharCode(65 + question.correctAnswer) }}) 
+                                        {{ question.options[question.correctAnswer] }}
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="quiz-actions">
+                            <button class="btn-retry" (click)="retryQuiz()">
+                                <i class="fas fa-redo"></i> Retry Quiz
+                            </button>
+                            <button class="btn-continue" (click)="resetContentDisplay()">
+                                <i class="fas fa-arrow-right"></i> Continue Learning
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Loading State -->
+    <div *ngIf="loading" class="loading-overlay">
+        <div class="spinner"></div>
+        <p>Loading course content...</p>
+    </div>
+
+    <!-- Error State -->
+    <div *ngIf="error && !loading" class="error-state">
+        <i class="fas fa-exclamation-triangle"></i>
+        <h2>{{ error }}</h2>
+        <button class="btn-primary" (click)="goBack()">Go Back</button>
+    </div>
+</div>
