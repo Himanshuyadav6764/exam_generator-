@@ -178,5 +178,14 @@ export class AiQuizService {
       headers: this.getHeaders()
     });
   }
+
+  /**
+   * Get student performance for a course using email (both AI and normal quizzes)
+   */
+  getStudentCoursePerformance(studentEmail: string, courseId: string): Observable<any> {
+    return this.http.get<any>(`http://localhost:4000/api/student/performance/${studentEmail}/course/${courseId}`, {
+      headers: this.getHeaders()
+    });
+  }
 }
 

@@ -24,6 +24,10 @@ export class MyCoursesComponent implements OnInit {
   fullName: string = '';
   userInitials: string = 'ST';
   searchQuery: string = '';
+  showDetailsModal: boolean = false;
+  selectedCourse: any = null;
+  courseDetails: any = null;
+  loadingDetails: boolean = false;
 
   constructor(
     private router: Router,
@@ -158,11 +162,43 @@ export class MyCoursesComponent implements OnInit {
   }
 
   viewCourseDetails(course: any): void {
-    this.router.navigate(['/course-detail'], {
-      queryParams: {
-        id: course.id
+    this.selectedCourse = course;
+    this.showDetailsModal = true;
+    this.loadingDetails = true;
+    
+    // Fetch detailed course information
+    this.courseService.getCourseDetails(course.id).subscribe({
+      next: (details) => {
+        this.courseDetails = details;
+        this.loadingDetails = false;
+        console.log('Course details:', details);
+      },
+      error: (err) => {
+        console.error('Error loading course details:', err);
+        this.loadingDetails = false;
+        // Set basic details from course object
+        this.courseDetails = {
+          topics: course.topics || [],
+          totalTopics: course.topics?.length || 0,
+          totalSubtopics: 0,
+          totalVideos: 0,
+          totalPdfs: 0,
+          totalMcqs: 0,
+          totalAiQuizzes: 1
+        };
       }
     });
+  }
+
+  closeDetailsModal(): void {
+    this.showDetailsModal = false;
+    this.selectedCourse = null;
+    this.courseDetails = null;
+  }
+
+  getTopicIcon(index: number): string {
+    const icons = ['📚', '📖', '📝', '🎯', '💡', '🔬', '🎓', '📊', '🔍', '⚡'];
+    return icons[index % icons.length];
   }
 
   goToDashboard(): void {

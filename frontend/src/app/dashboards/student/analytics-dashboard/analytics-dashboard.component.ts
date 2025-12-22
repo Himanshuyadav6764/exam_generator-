@@ -1,7 +1,9 @@
 import { Component, OnInit } from '@angular/core';
 import { AuthService } from '../../../services/auth.service';
 import { CourseService } from '../../../services/course.service';
+import { AdaptiveLearningService } from '../../../services/adaptive-learning.service';
 import { Chart, registerables } from 'chart.js';
+import { forkJoin } from 'rxjs';
 
 Chart.register(...registerables);
 
@@ -52,7 +54,8 @@ export class AnalyticsDashboardComponent implements OnInit {
   overallScore: number = 0;
   totalQuizzes: number = 0;
   averageAccuracy: number = 0;
-  currentLevel: string = 'BEGINNER';
+  currentLevel: string = 'Beginner';
+  topicsStudied: number = 0;
   
   // Strength & Weakness
   strongTopics: string[] = [];
@@ -62,7 +65,8 @@ export class AnalyticsDashboardComponent implements OnInit {
 
   constructor(
     private authService: AuthService,
-    private courseService: CourseService
+    private courseService: CourseService,
+    private adaptiveService: AdaptiveLearningService
   ) {}
 
   ngOnInit(): void {
@@ -75,11 +79,14 @@ export class AnalyticsDashboardComponent implements OnInit {
 
   loadAnalyticsData(): void {
     this.loading = true;
+    console.log('📊 Loading analytics for:', this.studentEmail);
     
-    // Fetch student progress data from all enrolled courses
-    this.courseService.getStudentProgress(this.studentEmail).subscribe({
-      next: (progressData: any[]) => {
-        this.processProgressData(progressData);
+    // Fetch overall progress from adaptive learning API
+    this.adaptiveService.getAllCoursesProgress(this.studentEmail).subscribe({
+      next: (response: any) => {
+        console.log('✅ Analytics API Response:', response);
+        const data = response.data || response;
+        this.processAnalyticsData(data);
         this.loading = false;
         
         // Render charts after data is loaded
@@ -91,11 +98,129 @@ export class AnalyticsDashboardComponent implements OnInit {
       error: (error) => {
         console.error('❌ Error loading analytics:', error);
         this.loading = false;
-        // Don't load mock data - show empty state instead
+        // Show empty state
       }
     });
   }
 
+  processAnalyticsData(data: any): void {
+    if (!data) {
+      console.log('⚠️ No analytics data available');
+      this.loading = false;
+      return;
+    }
+    
+    console.log('🔄 Processing analytics data:', data);
+    
+    // Extract summary stats (includes both AI and normal quizzes)
+    this.overallScore = Math.round(data.overallScore || 0);
+    this.totalQuizzes = data.totalQuizAttempts || 0; // This includes both AI and normal
+    this.averageAccuracy = Math.round(data.averageAccuracy || 0);
+    this.currentLevel = data.currentLevel || 'Beginner';
+    this.topicsStudied = data.topicsStudied || 0;
+    
+    console.log('📈 Stats Summary:', {
+      overallScore: this.overallScore,
+      totalQuizzes: this.totalQuizzes,
+      averageAccuracy: this.averageAccuracy,
+      topicsStudied: this.topicsStudied,
+      currentLevel: this.currentLevel
+    });
+    
+    // Process topic-wise performance (includes both AI and normal quizzes)
+    if (data.topicPerformance && Object.keys(data.topicPerformance).length > 0) {
+      this.processTopicPerformance(data.topicPerformance);
+    }
+    
+    // Process quiz attempts (includes both AI and normal quizzes)
+    if (data.allQuizAttempts && data.allQuizAttempts.length > 0) {
+      this.processQuizAttempts(data.allQuizAttempts);
+    }
+    
+    // Identify strengths and weaknesses (based on all quiz types)
+    this.identifyStrengthsWeaknesses();
+    
+    // Generate skill progression
+    this.generateSkillProgression();
+    
+    // Generate improvement tips
+    this.generateImprovementTips();
+  }
+  
+  processTopicPerformance(topicPerformance: any): void {
+    const colors = ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0', '#9966FF', '#FF9F40'];
+    let colorIndex = 0;
+    
+    this.topicPerformance = [];
+    
+    Object.keys(topicPerformance).forEach(topic => {
+      const perf = topicPerformance[topic];
+      this.topicPerformance.push({
+        topic: topic,
+        score: Math.round(perf.averageScore || 0),
+        attempts: perf.attempts || 0,
+        accuracy: Math.round(perf.averageScore || 0),
+        color: colors[colorIndex % colors.length]
+      });
+      colorIndex++;
+    });
+    
+    // Sort by score
+    this.topicPerformance.sort((a, b) => b.score - a.score);
+  }
+  
+  processQuizAttempts(attempts: any[]): void {
+    this.quizPerformance = [];
+    
+    console.log(`📝 Processing ${attempts.length} quiz attempts (AI + Normal)`);
+    
+    let aiCount = 0;
+    let normalCount = 0;
+    
+    attempts.forEach((attempt: any) => {
+      const accuracy = (attempt.score / attempt.totalQuestions) * 100;
+      const quizType = attempt.quizType || 'normal';
+      
+      if (quizType === 'ai') {
+        aiCount++;
+      } else {
+        normalCount++;
+      }
+      
+      this.quizPerformance.push({
+        quizName: (attempt.topicName || 'Quiz') + (quizType === 'ai' ? ' (AI)' : ''),
+        score: attempt.score,
+        accuracy: Math.round(accuracy),
+        timeTaken: this.formatTime(attempt.timeSpent || 0),
+        difficulty: attempt.difficultyLevel || attempt.difficulty || 'MEDIUM',
+        date: new Date(attempt.attemptedAt || attempt.attemptDate || Date.now())
+      });
+    });
+    
+    console.log(`✅ Quiz breakdown: ${normalCount} Normal + ${aiCount} AI = ${attempts.length} Total`);
+    
+    // Sort by date (most recent first)
+    this.quizPerformance.sort((a, b) => b.date.getTime() - a.date.getTime());
+  }
+  
+  identifyStrengthsWeaknesses(): void {
+    if (this.topicPerformance.length === 0) {
+      this.strongTopics = [];
+      this.weakTopics = [];
+      return;
+    }
+    
+    this.strongTopics = this.topicPerformance
+      .filter(t => t.score >= 75)
+      .map(t => t.topic)
+      .slice(0, 3);
+      
+    this.weakTopics = this.topicPerformance
+      .filter(t => t.score < 60)
+      .map(t => t.topic)
+      .slice(0, 3);
+  }
+  
   processProgressData(progressData: any[]): void {
     if (!progressData || progressData.length === 0) {
       console.log('⚠️ No progress data available');

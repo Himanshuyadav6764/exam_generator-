@@ -687,6 +687,12 @@
   font-family: 'Segoe UI', system-ui, sans-serif;
 }
 
+/* Make Current Level smaller to prevent overflow */
+.stat-card:nth-child(5) .stat-value {
+  font-size: 18px;
+  word-break: break-word;
+}
+
 /* Performance Details Card */
 .performance-details-card {
   background: white;

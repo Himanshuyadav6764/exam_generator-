@@ -138,3 +138,121 @@
         </div>
     </div>
 </div>
+
+<!-- Course Details Modal -->
+<div class="modal-overlay" *ngIf="showDetailsModal" (click)="closeDetailsModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+            <h2><i class="fas fa-info-circle"></i> Course Details</h2>
+            <button class="btn-close" (click)="closeDetailsModal()">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+
+        <div class="modal-body" *ngIf="!loadingDetails && courseDetails">
+            <div class="course-title">
+                <h3>{{ selectedCourse?.title }}</h3>
+                <p class="course-instructor">
+                    <i class="fas fa-user-tie"></i> {{ selectedCourse?.instructorName || selectedCourse?.instructorEmail }}
+                </p>
+            </div>
+
+            <!-- Stats Summary -->
+            <div class="stats-grid">
+                <div class="stat-box">
+                    <div class="stat-icon topics"><i class="fas fa-layer-group"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalTopics || 0 }}</span>
+                        <span class="stat-label">Topics</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon subtopics"><i class="fas fa-sitemap"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalSubtopics || 0 }}</span>
+                        <span class="stat-label">Subtopics</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon videos"><i class="fas fa-video"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalVideos || 0 }}</span>
+                        <span class="stat-label">Videos</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon pdfs"><i class="fas fa-file-pdf"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalPdfs || 0 }}</span>
+                        <span class="stat-label">PDFs</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon mcqs"><i class="fas fa-question-circle"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalMcqs || 0 }}</span>
+                        <span class="stat-label">MCQs</span>
+                    </div>
+                </div>
+                <div class="stat-box">
+                    <div class="stat-icon ai-quiz"><i class="fas fa-robot"></i></div>
+                    <div class="stat-content">
+                        <span class="stat-number">{{ courseDetails.totalAiQuizzes || 0 }}</span>
+                        <span class="stat-label">AI Quizzes</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics Breakdown -->
+            <div class="topics-section">
+                <h4><i class="fas fa-list"></i> Topics Breakdown</h4>
+                <div class="topics-list" *ngIf="courseDetails.topics && courseDetails.topics.length > 0">
+                    <div *ngFor="let topic of courseDetails.topics; let i = index" class="topic-item">
+                        <div class="topic-header">
+                            <span class="topic-icon">{{ getTopicIcon(i) }}</span>
+                            <span class="topic-name">{{ topic.name || topic }}</span>
+                        </div>
+                        <div class="topic-details" *ngIf="topic.subtopics">
+                            <div class="detail-row">
+                                <i class="fas fa-sitemap"></i>
+                                <span>{{ topic.subtopics?.length || 0 }} Subtopics</span>
+                            </div>
+                            <div class="detail-row" *ngIf="topic.videosCount !== undefined">
+                                <i class="fas fa-video"></i>
+                                <span>{{ topic.videosCount }} Videos</span>
+                            </div>
+                            <div class="detail-row" *ngIf="topic.pdfsCount !== undefined">
+                                <i class="fas fa-file-pdf"></i>
+                                <span>{{ topic.pdfsCount }} PDFs</span>
+                            </div>
+                            <div class="detail-row" *ngIf="topic.mcqsCount !== undefined">
+                                <i class="fas fa-question-circle"></i>
+                                <span>{{ topic.mcqsCount }} MCQs</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="no-topics" *ngIf="!courseDetails.topics || courseDetails.topics.length === 0">
+                    <p>No topics available for this course yet.</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-loading" *ngIf="loadingDetails">
+            <div class="spinner"></div>
+            <p>Loading course details...</p>
+        </div>
+
+        <div class="modal-footer">
+            <button class="btn-secondary" (click)="closeDetailsModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+            <button *ngIf="!isEnrolled(selectedCourse?.id)" class="btn-primary" (click)="enrollCourse(selectedCourse); closeDetailsModal()">
+                <i class="fas fa-user-plus"></i> Enroll Now
+            </button>
+            <button *ngIf="isEnrolled(selectedCourse?.id)" class="btn-success" (click)="startCourse(selectedCourse); closeDetailsModal()">
+                <i class="fas fa-play"></i> Start Learning
+            </button>
+        </div>
+    </div>
+</div>

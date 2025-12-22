@@ -29,18 +29,29 @@ export class LoginComponent {
       return;
     }
 
+    // Trim and lowercase email for consistency
+    this.email = this.email.trim().toLowerCase();
+
     this.isLoading = true;
     this.errorMessage = '';
 
     this.authService.login({ email: this.email, password: this.password }).subscribe({
       next: (response) => {
         this.isLoading = false;
+        console.log('✅ Login successful:', response.email);
         this.redirectToDashboard(response.role);
       },
       error: (error) => {
         this.isLoading = false;
-        this.errorMessage = 'Invalid email or password';
-        console.error('Login error:', error);
+        console.error('❌ Login failed:', error);
+        
+        if (error.status === 401) {
+          this.errorMessage = 'Invalid email or password. Please check your credentials and try again.';
+        } else if (error.status === 0) {
+          this.errorMessage = 'Cannot connect to server. Please check if the backend is running.';
+        } else {
+          this.errorMessage = error.error?.message || 'Login failed. Please try again.';
+        }
       }
     });
   }

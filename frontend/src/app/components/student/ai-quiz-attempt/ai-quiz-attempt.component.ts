@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { AiQuizService } from '../../../services/ai-quiz.service';
 import { AuthService } from '../../../services/auth.service';
 import { CourseService } from '../../../services/course.service';
+import { AdaptiveLearningService } from '../../../services/adaptive-learning.service';
 
 interface QuizQuestion {
   id: string;
@@ -48,9 +50,11 @@ export class AiQuizAttemptComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
+    private http: HttpClient,
     private aiQuizService: AiQuizService,
     private authService: AuthService,
-    private courseService: CourseService
+    private courseService: CourseService,
+    private adaptiveService: AdaptiveLearningService
   ) {}
 
   ngOnInit(): void {
@@ -78,8 +82,27 @@ export class AiQuizAttemptComponent implements OnInit {
           if (matchingQuiz) {
             this.quiz = matchingQuiz;
             this.questions = matchingQuiz.questions || [];
+            
+            // Process questions to ensure True/False questions have proper options
+            this.questions.forEach((q: QuizQuestion) => {
+              // If question type is TRUE_FALSE or BOOLEAN and options are missing/incomplete
+              if (q.type && (q.type.toUpperCase() === 'TRUE_FALSE' || q.type.toUpperCase() === 'BOOLEAN')) {
+                if (!q.options || q.options.length < 2) {
+                  q.options = ['True', 'False'];
+                  console.log(`✓ Fixed True/False options for question: ${q.id}`);
+                }
+              }
+              // Ensure options array exists for all questions
+              if (!q.options || q.options.length === 0) {
+                console.warn(`⚠️ Question ${q.id} has no options, using defaults`);
+                q.options = ['Option A', 'Option B', 'Option C', 'Option D'];
+              }
+            });
+            
             this.totalQuestions = this.questions.length;
+            this.startTime = new Date(); // Start timer when quiz is loaded
             console.log(`✓ Loaded ${this.totalQuestions} questions for ${this.topicName}`);
+            console.log('⏱️ Quiz timer started');
           } else {
             this.errorMessage = `No AI quiz found for topic: ${this.topicName}`;
             console.error(this.errorMessage);
@@ -115,6 +138,13 @@ export class AiQuizAttemptComponent implements OnInit {
     const endTime = new Date();
     const timeTakenSeconds = Math.floor((endTime.getTime() - this.startTime.getTime()) / 1000);
 
+    console.log('⏱️ Quiz Duration:', {
+      startTime: this.startTime,
+      endTime: endTime,
+      seconds: timeTakenSeconds,
+      minutes: Math.floor(timeTakenSeconds / 60)
+    });
+
     // Calculate results
     this.submitted = true;
     this.correctAnswers = 0;
@@ -130,11 +160,11 @@ export class AiQuizAttemptComponent implements OnInit {
 
     this.score = Math.round((this.correctAnswers / this.totalQuestions) * 100);
     
-    console.log('Quiz submitted:', {
+    console.log('🎯 Quiz Results:', {
       correct: this.correctAnswers,
       wrong: this.wrongAnswers,
-      score: this.score,
-      timeTaken: timeTakenSeconds
+      score: this.score + '%',
+      timeTaken: timeTakenSeconds + 's'
     });
 
     // Save performance to backend
@@ -159,10 +189,10 @@ export class AiQuizAttemptComponent implements OnInit {
       timeTakenSeconds: timeTakenSeconds,
       scorePercent: this.score,
       details: this.questions.map(q => ({
-        questionId: q.id,
-        selectedAnswer: q.selectedAnswer !== undefined ? q.selectedAnswer.toString() : '',
-        correctAnswer: q.correctOption.toString(),
-        isCorrect: q.selectedAnswer === q.correctOption
+        questionId: q.id || '',
+        selectedAnswer: q.selectedAnswer !== undefined && q.selectedAnswer !== null ? q.selectedAnswer.toString() : '',
+        correctAnswer: q.correctOption !== undefined && q.correctOption !== null ? q.correctOption.toString() : '0',
+        isCorrect: q.selectedAnswer !== undefined && q.selectedAnswer === q.correctOption
       }))
     };
 
@@ -170,39 +200,70 @@ export class AiQuizAttemptComponent implements OnInit {
     this.aiQuizService.savePerformance(performanceData).subscribe({
       next: (response) => {
         console.log('✓ AI Quiz performance saved:', response);
-        // Also track in main progress system for analytics
-        this.trackInProgressSystem(timeTakenSeconds);
       },
       error: (err) => {
         console.error('Failed to save AI quiz performance:', err);
       }
     });
+    
+    // ALWAYS track in adaptive learning system (don't depend on AI quiz service)
+    console.log('🎯 Now tracking in adaptive learning system...');
+    this.trackInProgressSystem(timeTakenSeconds);
   }
 
   trackInProgressSystem(timeTakenSeconds: number): void {
     const studentEmail = this.authService.getEmail();
-    if (!studentEmail) return;
+    if (!studentEmail) {
+      console.error('❌ Cannot track: No student email found');
+      return;
+    }
 
-    // Track AI quiz attempt in main progress system for analytics dashboard
+    // Track AI quiz attempt in student progress system
     const progressPayload = {
       studentEmail: studentEmail,
       courseId: this.courseId,
       topicName: this.topicName,
       score: this.correctAnswers,
       totalQuestions: this.totalQuestions,
-      timeSpentSeconds: timeTakenSeconds,
       difficulty: 'INTERMEDIATE',
-      quizType: 'AI_GENERATED'
+      timeSpentSeconds: timeTakenSeconds,
+      quizType: 'ai'  // Mark as AI-generated quiz
     };
 
-    this.courseService.trackQuizAttempt(progressPayload).subscribe({
-      next: (response) => {
-        console.log('✓ AI Quiz tracked in progress system:', response);
-        console.log('📊 Overall Score:', response.overallScore);
-        console.log('🎯 Current Level:', response.currentLevel);
+    console.log('🤖 Recording AI quiz in progress system:');
+    console.log('   📧 Student:', studentEmail);
+    console.log('   📚 Course:', this.courseId);
+    console.log('   📖 Topic:', this.topicName);
+    console.log('   ✅ Score:', this.correctAnswers + '/' + this.totalQuestions);
+    console.log('   ⏱️ Time:', timeTakenSeconds + 's (' + Math.floor(timeTakenSeconds / 60) + 'm)');
+    console.log('   🤖 Type: AI Quiz');
+    console.log('   📦 Full Payload:', progressPayload);
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('❌ No auth token found');
+      return;
+    }
+
+    this.http.post('http://localhost:8081/api/progress/quiz-attempt', progressPayload, {
+      headers: new HttpHeaders({
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json'
+      })
+    }).subscribe({
+      next: (response: any) => {
+        console.log('✅ AI Quiz tracked successfully!');
+        console.log('   📊 Overall Score:', response.overallScore + '%');
+        console.log('   🎯 Current Level:', response.currentLevel);
+        console.log('   🏆 Quizzes Passed:', response.quizzesPassed);
+        console.log('   ⏱️ Total Time:', response.totalTimeSpentMinutes + 'm');
+        console.log('   📈 Full Response:', response);
       },
       error: (err) => {
-        console.error('❌ Failed to track AI quiz in progress:', err);
+        console.error('❌ Failed to track AI quiz:');
+        console.error('   Status:', err.status);
+        console.error('   Message:', err.message);
+        console.error('   Full Error:', err);
       }
     });
   }

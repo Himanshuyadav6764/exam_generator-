@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 @Injectable({
   providedIn: 'root'
@@ -66,6 +67,10 @@ export class CourseService {
 
   getCourseById(id: string): Observable<any> {
     return this.http.get(`${this.apiUrl}/${id}`, { headers: this.getHeaders() });
+  }
+
+  getCourseDetails(id: string): Observable<any> {
+    return this.http.get(`${this.apiUrl}/${id}/details`, { headers: this.getHeaders() });
   }
 
   getCoursesByInstructor(email: string): Observable<any[]> {

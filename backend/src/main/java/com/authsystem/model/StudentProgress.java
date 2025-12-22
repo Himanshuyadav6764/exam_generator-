@@ -176,11 +176,13 @@ public class StudentProgress {
         private int score;
         private int totalQuestions;
         private String difficulty;
+        private String quizType; // "normal" or "ai"
         private LocalDateTime attemptedAt;
         private boolean passed;
 
         public QuizAttempt() {
             this.passed = false;
+            this.quizType = "normal";
         }
 
         public String getQuizId() { return quizId; }
@@ -193,6 +195,8 @@ public class StudentProgress {
         public void setTotalQuestions(int totalQuestions) { this.totalQuestions = totalQuestions; }
         public String getDifficulty() { return difficulty; }
         public void setDifficulty(String difficulty) { this.difficulty = difficulty; }
+        public String getQuizType() { return quizType; }
+        public void setQuizType(String quizType) { this.quizType = quizType; }
         public LocalDateTime getAttemptedAt() { return attemptedAt; }
         public void setAttemptedAt(LocalDateTime attemptedAt) { this.attemptedAt = attemptedAt; }
         public boolean isPassed() { return passed; }

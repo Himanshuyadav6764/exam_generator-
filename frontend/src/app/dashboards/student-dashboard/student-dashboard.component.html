@@ -73,8 +73,11 @@
           </div>
 
           <div class="course-actions-modern">
-            <button class="enroll-btn-modern" (click)="viewRecommendedCourse(course.id)">
-              Enroll now →
+            <button *ngIf="!isEnrolledIn(course.id)" class="enroll-btn-modern" (click)="enrollNow($event, course.id)">
+              🔒 Enroll now →
+            </button>
+            <button *ngIf="isEnrolledIn(course.id)" class="view-btn-modern" (click)="viewRecommendedCourse(course.id)">
+              ✓ View Course →
             </button>
           </div>
         </div>

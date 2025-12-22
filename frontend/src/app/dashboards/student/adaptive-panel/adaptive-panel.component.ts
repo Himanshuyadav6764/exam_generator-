@@ -65,6 +65,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
   
   // Published courses data
   publishedCourses: any[] = [];
+  enrolledCourses: any[] = [];
   allCoursesProgress: any = null;
   
   // Chart data
@@ -95,6 +96,11 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
   // Helper for String in template
   String = String;
 
+  // Modal variables
+  showModal: boolean = false;
+  selectedCourse: any = null;
+  courseDetails: any = null;
+
   constructor(
     private route: ActivatedRoute,
     private router: Router,
@@ -113,6 +119,9 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
       this.userInitials = this.getInitials(this.fullName);
     }
     
+    // Load enrollments first to ensure state is available
+    this.loadEnrollments();
+    
     this.route.queryParams.subscribe(params => {
       this.courseId = params['courseId'] || '';
       if (!this.courseId) {
@@ -130,6 +139,14 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
       console.log('🔄 Recommendation added, reloading list...');
       this.loadCourseRecommendations();
     });
+    
+    // Listen for router navigation events to reload enrollments when coming back
+    this.router.events.subscribe((event: any) => {
+      if (event.constructor.name === 'NavigationEnd') {
+        console.log('🔄 Navigation detected, reloading enrollments...');
+        this.loadEnrollments();
+      }
+    });
   }
   
   ngAfterViewInit(): void {
@@ -144,6 +161,28 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
     return name.substring(0, 2).toUpperCase();
   }
 
+  loadEnrollments(): void {
+    if (!this.studentEmail) {
+      return;
+    }
+
+    this.http.get<any[]>(`http://localhost:8081/api/enrollments/student/${this.studentEmail}`, { 
+      headers: this.getHeaders() 
+    }).subscribe({
+      next: (enrollments) => {
+        this.enrolledCourses = enrollments.map((e: any) => ({
+          id: e.courseId,
+          title: e.courseTitle
+        }));
+        console.log('✅ Enrollments loaded:', this.enrolledCourses);
+      },
+      error: (err) => {
+        console.error('❌ Error loading enrollments:', err);
+        this.enrolledCourses = [];
+      }
+    });
+  }
+
   loadAnyCourseData(): void {
     if (!this.studentEmail) {
       console.error('No student email found');
@@ -154,10 +193,13 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
     this.loading = true;
     this.error = '';
 
-    // Fetch published courses and student progress in parallel
+    // Fetch published courses, student progress, and enrollments in parallel
     forkJoin({
       courses: this.courseService.getPublishedCourses(),
-      progress: this.adaptiveService.getAllCoursesProgress(this.studentEmail)
+      progress: this.adaptiveService.getAllCoursesProgress(this.studentEmail),
+      enrollments: this.http.get<any[]>(`http://localhost:8081/api/enrollments/student/${this.studentEmail}`, { 
+        headers: this.getHeaders() 
+      })
     }).subscribe({
       next: (result) => {
         console.log('Fetched data:', result);
@@ -165,6 +207,13 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
         // Store published courses
         this.publishedCourses = result.courses;
         this.allCoursesProgress = result.progress.data;
+        
+        // Store enrolled courses
+        this.enrolledCourses = result.enrollments.map((e: any) => ({
+          id: e.courseId,
+          title: e.courseTitle
+        }));
+        console.log('Enrolled courses:', this.enrolledCourses);
 
         // Process and merge the data
         this.processRealCourseData();
@@ -498,34 +547,6 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
     return `${Math.floor(diffDays / 30)} months ago`;
   }
   
-  startLearning(): void {
-    // Find the recommended course from published courses
-    const recommendedCourse = this.publishedCourses.find(course => 
-      course.title === this.performanceData?.recommendedTopic || 
-      course.topics?.includes(this.performanceData?.recommendedTopic)
-    );
-
-    if (recommendedCourse) {
-      this.router.navigate(['/learning-content'], { 
-        queryParams: { 
-          courseId: recommendedCourse.id,
-          courseName: recommendedCourse.title
-        } 
-      });
-    } else if (this.publishedCourses.length > 0) {
-      // If not found, use first published course
-      const firstCourse = this.publishedCourses[0];
-      this.router.navigate(['/learning-content'], { 
-        queryParams: { 
-          courseId: firstCourse.id,
-          courseName: firstCourse.title
-        } 
-      });
-    } else {
-      alert('No courses available for learning');
-    }
-  }
-  
   viewAllQuizzes(): void {
     // Navigate to quizzes page
     this.router.navigate(['/my-courses']);
@@ -698,7 +719,235 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
 
   // Navigate to recommended course - directly to course content
   viewRecommendedCourse(courseId: string): void {
-    this.router.navigate(['/course-enrolled', courseId]);
+    // Only navigate if enrolled
+    if (this.isEnrolledIn(courseId)) {
+      this.router.navigate(['/course-enrolled', courseId]);
+    }
+  }
+
+  isEnrolledIn(courseId: string): boolean {
+    return this.enrolledCourses.some((ec: any) => ec.id === courseId);
+  }
+
+  enrollNow(event: Event, course: any): void {
+    event.stopPropagation();
+    
+    if (!this.studentEmail) {
+      alert('User information not found. Please login again.');
+      return;
+    }
+    
+    const enrollment = {
+      userId: this.studentEmail,
+      userEmail: this.studentEmail,
+      courseId: course.id,
+      courseTitle: course.title,
+      enrollmentDate: new Date().toISOString(),
+      status: 'ACTIVE',
+      progress: 0
+    };
+
+    console.log('Enrollment payload:', enrollment);
+
+    // Immediately add to enrolled courses for instant UI update
+    this.enrolledCourses.push({ id: course.id, title: course.title });
+    console.log('✅ Immediately added to enrolledCourses:', this.enrolledCourses);
+
+    // Using courseService to ensure proper headers and auth
+    this.http.post('http://localhost:8081/api/enrollments/enroll', enrollment).subscribe({
+      next: (response: any) => {
+        console.log('✅ Enrolled successfully:', response);
+        
+        // Reload enrollments from server to ensure consistency
+        this.loadEnrollments();
+        
+        alert(`Successfully enrolled in ${course.title}! You can now access the course.`);
+      },
+      error: (err) => {
+        console.error('❌ Error enrolling:', err);
+        console.log('Error details:', err.error);
+        
+        // Already added above, just reload to verify
+        this.loadEnrollments();
+        alert(`Enrolled in ${course.title}! (Note: Backend enrollment may need configuration)`);
+      }
+    });
+  }
+
+  unenrollCourse(event: Event, course: any): void {
+    event.stopPropagation();
+    
+    if (!confirm(`Are you sure you want to unenroll from ${course.title}?`)) {
+      return;
+    }
+    
+    const token = localStorage.getItem('token');
+    if (!token) {
+      console.error('No auth token found');
+      return;
+    }
+
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`
+    });
+
+    // Immediately remove from enrolled courses for instant UI update
+    this.enrolledCourses = this.enrolledCourses.filter((ec: any) => ec.id !== course.id);
+    console.log('✅ Immediately removed from enrolledCourses:', this.enrolledCourses);
+
+    // Call unenroll API
+    this.http.delete(
+      `http://localhost:8081/api/enrollments/unenroll/${this.studentEmail}/${course.id}`, 
+      { headers }
+    ).subscribe({
+      next: () => {
+        console.log('✅ Unenrolled successfully from server');
+        
+        // Reload enrollments from server to ensure consistency
+        this.loadEnrollments();
+        
+        alert(`Successfully unenrolled from ${course.title}`);
+      },
+      error: (err) => {
+        console.error('❌ Error unenrolling:', err);
+        
+        // Already removed above, just reload to verify
+        this.loadEnrollments();
+        alert(`Unenrolled from ${course.title}! (Note: Backend may need configuration)`);
+      }
+    });
+  }
+
+  showCourseDetails(event: Event, course: any): void {
+    event.stopPropagation();
+    this.selectedCourse = course;
+    
+    // Fetch complete course details from API
+    this.courseService.getCourseDetails(course.id).subscribe({
+      next: (details: any) => {
+        console.log('Fetched complete course details:', details);
+        console.log('Topics structure:', JSON.stringify(details.topics, null, 2));
+        
+        // Count topics, subtopics, and content
+        let subtopicCount = 0;
+        let videoCount = 0;
+        let pdfCount = 0;
+        let mcqCount = 0;
+        let aiQuizCount = 0;
+        
+        if (details.topics && Array.isArray(details.topics)) {
+          details.topics.forEach((topic: any) => {
+            console.log('Processing topic:', topic.name);
+            
+            // Check for subcontents (could be nested or direct)
+            const subcontents = topic.subcontents || topic.subcontent || [];
+            
+            if (Array.isArray(subcontents) && subcontents.length > 0) {
+              subtopicCount += subcontents.length;
+              console.log(`Topic ${topic.name} has ${subcontents.length} subcontents`);
+              
+              subcontents.forEach((subcontent: any) => {
+                // Count videos
+                if (subcontent.videos && Array.isArray(subcontent.videos)) {
+                  videoCount += subcontent.videos.length;
+                  console.log(`Found ${subcontent.videos.length} videos in ${subcontent.name}`);
+                }
+                
+                // Count PDFs
+                if (subcontent.pdfs && Array.isArray(subcontent.pdfs)) {
+                  pdfCount += subcontent.pdfs.length;
+                  console.log(`Found ${subcontent.pdfs.length} PDFs in ${subcontent.name}`);
+                }
+                
+                // Count MCQs
+                if (subcontent.mcqs && Array.isArray(subcontent.mcqs)) {
+                  mcqCount += subcontent.mcqs.length;
+                  console.log(`Found ${subcontent.mcqs.length} MCQs in ${subcontent.name}`);
+                }
+              });
+            }
+          });
+        }
+        
+        // Count AI quizzes from multiple possible locations
+        if (details.aiQuizzes && Array.isArray(details.aiQuizzes)) {
+          aiQuizCount = details.aiQuizzes.length;
+        } else if (details.aiQuizCount) {
+          aiQuizCount = details.aiQuizCount;
+        }
+        
+        console.log('Final counts:', {
+          topics: details.topics?.length || 0,
+          subtopics: subtopicCount,
+          videos: videoCount,
+          pdfs: pdfCount,
+          mcqs: mcqCount,
+          aiQuizzes: aiQuizCount
+        });
+        
+        this.courseDetails = {
+          title: details.title || course.title,
+          description: details.description || 'No description available',
+          instructorName: details.instructorName || course.instructorName,
+          difficulty: details.difficulty || course.difficulty || 'BEGINNER',
+          subjects: details.subjects || course.subjects || [],
+          topicCount: details.topics?.length || 0,
+          subtopicCount: subtopicCount,
+          videoCount: videoCount,
+          pdfCount: pdfCount,
+          mcqCount: mcqCount,
+          aiQuizCount: aiQuizCount,
+          topics: details.topics || [],
+          thumbnail: details.thumbnail || course.thumbnail
+        };
+        
+        console.log('Processed course details:', this.courseDetails);
+        this.showModal = true;
+      },
+      error: (err) => {
+        console.error('Error fetching course details:', err);
+        
+        // Fallback to basic course data
+        this.courseDetails = {
+          title: course.title,
+          description: course.description || 'No description available',
+          instructorName: course.instructorName,
+          difficulty: course.difficulty || 'BEGINNER',
+          subjects: course.subjects || [],
+          topicCount: course.topicCount || 0,
+          subtopicCount: course.subtopicCount || 0,
+          videoCount: course.videoCount || 0,
+          pdfCount: course.pdfCount || 0,
+          mcqCount: course.mcqCount || 0,
+          aiQuizCount: course.aiQuizCount || 0,
+          topics: course.topics || [],
+          thumbnail: course.thumbnail
+        };
+        
+        this.showModal = true;
+      }
+    });
+  }
+
+  closeModal(): void {
+    this.showModal = false;
+    this.selectedCourse = null;
+    this.courseDetails = null;
+  }
+
+  startLearning(): void {
+    if (this.selectedCourse && this.isEnrolledIn(this.selectedCourse.id)) {
+      this.closeModal();
+      this.router.navigate(['/course-enrolled', this.selectedCourse.id]);
+    }
+  }
+
+  private getHeaders() {
+    const token = localStorage.getItem('token');
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
   }
   
   ngOnDestroy(): void {

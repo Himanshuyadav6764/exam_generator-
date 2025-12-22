@@ -44,6 +44,9 @@ export class CourseEnrolledComponent implements OnInit {
   loading = false;
   error = '';
   
+  // Math object for template
+  Math = Math;
+  
   // New properties for the redesigned interface
   activeTab: string = 'chapters';
   showTopicDetails: boolean = false;
@@ -63,6 +66,8 @@ export class CourseEnrolledComponent implements OnInit {
   normalQuizAttempts: number = 0;
   aiQuizAvgScore: number = 0;
   normalQuizAvgScore: number = 0;
+  aiQuizLowScore: number = 0;
+  normalQuizLowScore: number = 0;
   totalTimeSpent: number = 0; // in seconds
 
   constructor(
@@ -361,6 +366,9 @@ export class CourseEnrolledComponent implements OnInit {
         this.studentProgress = progress;
         this.loadingProgress = false;
         console.log('✅ Student progress loaded:', progress);
+        
+        // Calculate course performance from progress data
+        this.loadCoursePerformance();
       },
       error: (err) => {
         console.error('Error loading progress:', err);
@@ -370,74 +378,134 @@ export class CourseEnrolledComponent implements OnInit {
   }
 
   getOverallScore(): string {
-    return this.studentProgress ? Math.round(this.studentProgress.overallScore) + '%' : '0%';
+    if (!this.coursePerformance) return '0%';
+    // Calculate average from all quizzes
+    const totalAttempts = this.normalQuizAttempts + this.aiQuizAttempts;
+    if (totalAttempts === 0) return '0%';
+    const avgScore = ((this.normalQuizAvgScore * this.normalQuizAttempts) + (this.aiQuizAvgScore * this.aiQuizAttempts)) / totalAttempts;
+    return Math.round(avgScore) + '%';
   }
 
   getTimeSpent(): string {
-    if (!this.studentProgress) return '0m';
-    return this.progressService.formatTimeSpent(this.studentProgress.totalTimeSpentMinutes);
+    if (!this.coursePerformance || this.totalTimeSpent === 0) return '0m';
+    return this.formatTimeSpent(this.totalTimeSpent);
   }
 
   getQuizzesCount(): number {
-    return this.studentProgress ? this.studentProgress.quizzesPassed : 0;
+    return this.normalQuizAttempts;
+  }
+
+  getAIQuizzesCount(): number {
+    return this.aiQuizAttempts;
   }
 
   getCurrentLevel(): string {
-    if (!this.studentProgress) return 'BEGINNER';
-    return this.studentProgress.currentLevel;
+    const totalAttempts = this.normalQuizAttempts + this.aiQuizAttempts;
+    if (totalAttempts === 0) return 'BEGINNER';
+    const avgScore = ((this.normalQuizAvgScore * this.normalQuizAttempts) + (this.aiQuizAvgScore * this.aiQuizAttempts)) / totalAttempts;
+    if (avgScore >= 90) return 'ADVANCED';
+    if (avgScore >= 70) return 'INTERMEDIATE';
+    return 'BEGINNER';
   }
 
   getLevelColor(): string {
-    return this.progressService.getLevelColor(this.getCurrentLevel());
+    const level = this.getCurrentLevel();
+    switch(level) {
+      case 'ADVANCED': return '#10b981';
+      case 'INTERMEDIATE': return '#f59e0b';
+      case 'BEGINNER': return '#6366f1';
+      default: return '#6366f1';
+    }
   }
 
   getTotalAttempts(): number {
-    return this.studentProgress?.overallPerformance?.totalQuizzes || 0;
+    return this.normalQuizAttempts + this.aiQuizAttempts;
   }
 
   getAverageScore(): string {
-    const avg = this.studentProgress?.overallPerformance?.averageScore || 0;
-    return Math.round(avg) + '%';
+    const totalAttempts = this.normalQuizAttempts + this.aiQuizAttempts;
+    if (totalAttempts === 0) return '0%';
+    const avgScore = ((this.normalQuizAvgScore * this.normalQuizAttempts) + (this.aiQuizAvgScore * this.aiQuizAttempts)) / totalAttempts;
+    return Math.round(avgScore) + '%';
   }
 
   getCompletionStatus(): string {
-    const score = this.studentProgress?.overallScore || 0;
-    if (score === 0) return '0%';
-    return Math.round(score) + '%';
+    // Calculate completion based on quizzes passed vs available
+    if (!this.studentProgress) return '0%';
+    const total = this.normalQuizAttempts + this.aiQuizAttempts;
+    if (total === 0) return '0%';
+    const passed = this.studentProgress.quizzesPassed || 0;
+    const percentage = Math.round((passed / total) * 100);
+    return percentage + '%';
   }
 
   // Load course performance (AI and normal quizzes)
   loadCoursePerformance(): void {
     if (!this.studentEmail || !this.courseId) return;
 
-    this.aiQuizService.getCoursePerformance(this.studentEmail, this.courseId).subscribe({
-      next: (response) => {
-        if (response.success) {
-          this.coursePerformance = response;
-          
-          // Update stats
-          this.aiQuizAttempts = response.aiQuizzes.totalAttempts;
-          this.normalQuizAttempts = response.normalQuizzes.totalAttempts;
-          this.aiQuizAvgScore = response.aiQuizzes.averageScore;
-          this.normalQuizAvgScore = response.normalQuizzes.averageScore;
-          this.totalTimeSpent = response.overall.totalTimeSpent;
-          
-          console.log('✓ Course performance loaded:', response);
-        }
-      },
-      error: (err) => {
-        console.error('Error loading course performance:', err);
+    // Use StudentProgress data which is already loaded
+    if (this.studentProgress && this.studentProgress.quizAttempts) {
+      this.coursePerformance = { success: true };
+      
+      // Separate normal and AI quizzes
+      const normalQuizzes = this.studentProgress.quizAttempts.filter((q: any) => q.quizType === 'normal' || !q.quizType);
+      const aiQuizzes = this.studentProgress.quizAttempts.filter((q: any) => q.quizType === 'ai');
+      
+      // Calculate normal quiz stats
+      this.normalQuizAttempts = normalQuizzes.length;
+      if (normalQuizzes.length > 0) {
+        const normalScores = normalQuizzes.map((q: any) => (q.score / q.totalQuestions) * 100);
+        const normalScoreSum = normalScores.reduce((sum: number, score: number) => sum + score, 0);
+        this.normalQuizAvgScore = Math.round(normalScoreSum / normalQuizzes.length);
+        this.normalQuizLowScore = Math.round(Math.min(...normalScores));
+      } else {
+        this.normalQuizAvgScore = 0;
+        this.normalQuizLowScore = 0;
       }
-    });
+      
+      // Calculate AI quiz stats
+      this.aiQuizAttempts = aiQuizzes.length;
+      if (aiQuizzes.length > 0) {
+        const aiScores = aiQuizzes.map((q: any) => (q.score / q.totalQuestions) * 100);
+        const aiScoreSum = aiScores.reduce((sum: number, score: number) => sum + score, 0);
+        this.aiQuizAvgScore = Math.round(aiScoreSum / aiQuizzes.length);
+        this.aiQuizLowScore = Math.round(Math.min(...aiScores));
+      } else {
+        this.aiQuizAvgScore = 0;
+        this.aiQuizLowScore = 0;
+      }
+      
+      // Get total time spent in minutes
+      this.totalTimeSpent = this.studentProgress.totalTimeSpentMinutes || 0;
+      
+      console.log('✓ Performance calculated from StudentProgress:', {
+        normalQuizzes: this.normalQuizAttempts,
+        normalAvg: this.normalQuizAvgScore,
+        normalLow: this.normalQuizLowScore,
+        aiQuizzes: this.aiQuizAttempts,
+        aiAvg: this.aiQuizAvgScore,
+        aiLow: this.aiQuizLowScore,
+        timeSpentMinutes: this.totalTimeSpent,
+        totalQuizAttempts: this.studentProgress.quizAttempts?.length || 0
+      });
+      
+      // Log quiz attempts for debugging
+      if (this.studentProgress.quizAttempts && this.studentProgress.quizAttempts.length > 0) {
+        console.log('📊 Quiz Attempts Breakdown:');
+        this.studentProgress.quizAttempts.forEach((q: any, index: number) => {
+          console.log(`   ${index + 1}. Type: ${q.quizType || 'undefined'}, Score: ${q.score}/${q.totalQuestions}, Title: ${q.quizTitle}`);
+        });
+      }
+    }
   }
 
-  // Format time from seconds to readable format
-  formatTimeSpent(seconds: number): string {
-    if (seconds < 60) return `${seconds}s`;
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    const remainingMinutes = minutes % 60;
+  // Format time from minutes to readable format
+  formatTimeSpent(minutes: number): string {
+    if (minutes < 1) return '0m';
+    const mins = Math.floor(minutes);
+    if (mins < 60) return `${mins}m`;
+    const hours = Math.floor(mins / 60);
+    const remainingMinutes = mins % 60;
     return `${hours}h ${remainingMinutes}m`;
   }
 }

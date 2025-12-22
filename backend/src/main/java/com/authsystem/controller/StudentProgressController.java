@@ -112,8 +112,9 @@ public class StudentProgressController {
         Integer totalQuestions = (Integer) request.get("totalQuestions");
         Integer timeSpentSeconds = (Integer) request.get("timeSpentSeconds");
         String difficulty = (String) request.getOrDefault("difficulty", "MEDIUM");
+        String quizType = (String) request.getOrDefault("quizType", "normal"); // Track if it's AI or normal quiz
 
-        System.out.println("📝 Recording quiz attempt - Score: " + score + "/" + totalQuestions + " for topic: " + topicName);
+        System.out.println("📝 Recording " + quizType + " quiz attempt - Score: " + score + "/" + totalQuestions + " for topic: " + topicName);
 
         StudentProgress progress = getOrCreateProgress(email, courseId);
         
@@ -128,6 +129,7 @@ public class StudentProgressController {
         attempt.setScore(score);
         attempt.setTotalQuestions(totalQuestions);
         attempt.setDifficulty(difficulty);
+        attempt.setQuizType(quizType);
         attempt.setAttemptedAt(LocalDateTime.now());
         attempt.setPassed(passed);
         

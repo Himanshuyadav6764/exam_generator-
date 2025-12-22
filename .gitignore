@@ -30,6 +30,18 @@ Thumbs.db
 # Logs
 *.log
 
-# Environment
+# Environment Variables
 .env
 .env.local
+.env.*.local
+backend/.env
+frontend/.env
+ai-quiz-service/.env
+mcq-generator/.env
+
+# Keep example files
+!.env.example
+!backend/.env.example
+!frontend/.env.example
+!ai-quiz-service/.env.example
+!mcq-generator/.env.example

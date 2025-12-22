@@ -73,7 +73,7 @@
           </svg>
         </div>
         <div class="stat-content">
-          <h3>Overall Score</h3>
+          <h3>OVERALL SCORE</h3>
           <p class="stat-value">{{ performanceData?.overallScore || 0 }}%</p>
         </div>
       </div>
@@ -87,12 +87,12 @@
           </svg>
         </div>
         <div class="stat-content">
-          <h3>Time Spent</h3>
+          <h3>TIME SPENT</h3>
           <p class="stat-value">{{ formatTime(performanceData?.totalTimeSpent || 0) }}</p>
         </div>
       </div>
 
-      <!-- Total Quizzes -->
+      <!-- MCQ Quizzes -->
       <div class="stat-card">
         <div class="stat-icon" style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
@@ -101,8 +101,23 @@
           </svg>
         </div>
         <div class="stat-content">
-          <h3>Quizzes</h3>
-          <p class="stat-value">{{ performanceData?.totalQuizzes || 0 }}</p>
+          <h3>QUIZZES</h3>
+          <p class="stat-value">{{ performanceData?.mcqAttempts || 0 }}</p>
+        </div>
+      </div>
+
+      <!-- AI Quizzes -->
+      <div class="stat-card">
+        <div class="stat-icon" style="background: linear-gradient(135deg, #fa709a 0%, #fee140 100%);">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+        </div>
+        <div class="stat-content">
+          <h3>AI QUIZZES</h3>
+          <p class="stat-value">{{ performanceData?.aiQuizAttempts || 0 }}</p>
         </div>
       </div>
 
@@ -114,8 +129,102 @@
           </svg>
         </div>
         <div class="stat-content">
-          <h3>Current Level</h3>
-          <p class="stat-value">{{ performanceData?.currentLevel || 'BEGINNER' }}</p>
+          <h3>CURRENT LEVEL</h3>
+          <p class="stat-value">{{ performanceData?.currentLevel || 'Beginner' }}</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Student Performance Tracking Section -->
+    <div class="performance-tracking-section">
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+        <h2 class="section-title" style="margin-bottom: 0;">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <line x1="18" y1="20" x2="18" y2="10"></line>
+            <line x1="12" y1="20" x2="12" y2="4"></line>
+            <line x1="6" y1="20" x2="6" y2="14"></line>
+          </svg>
+          Student Performance Tracking
+        </h2>
+        <button (click)="loadPerformanceData()" style="padding: 8px 16px; background: #667eea; color: white; border: none; border-radius: 8px; cursor: pointer; font-size: 14px;">
+          Refresh Data
+        </button>
+      </div>
+
+      <div class="performance-stats-row">
+        <div class="perf-stat">
+          <span class="perf-label">TOTAL ATTEMPTS</span>
+          <span class="perf-value">{{ performanceData?.totalQuizzes || 0 }}</span>
+        </div>
+        <div class="perf-stat">
+          <span class="perf-label">AVERAGE SCORE</span>
+          <span class="perf-value">{{ performanceData?.overallScore || 0 }}%</span>
+        </div>
+        <div class="perf-stat">
+          <span class="perf-label">COMPLETION STATUS</span>
+          <span class="perf-value">{{ performanceData?.avgCompletion || 0 }}%</span>
+        </div>
+      </div>
+
+      <div class="quiz-types-grid">
+        <!-- Normal Quizzes -->
+        <div class="quiz-type-card" style="background: linear-gradient(135deg, rgba(79, 172, 254, 0.1) 0%, rgba(0, 242, 254, 0.1) 100%); border-left: 4px solid #4facfe;">
+          <div class="quiz-type-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4facfe" stroke-width="2">
+              <polyline points="9 11 12 14 22 4"></polyline>
+              <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11"></path>
+            </svg>
+            <h3>Normal Quizzes</h3>
+          </div>
+          <div class="quiz-type-stats">
+            <div class="stat-item">
+              <span class="label">ATTEMPTS</span>
+              <span class="value">{{ performanceData?.mcqAttempts || 0 }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">AVG SCORE</span>
+              <span class="value">{{ performanceData?.mcqAverage || 0 }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI Generated Quizzes -->
+        <div class="quiz-type-card" style="background: linear-gradient(135deg, rgba(250, 112, 154, 0.1) 0%, rgba(254, 225, 64, 0.1) 100%); border-left: 4px solid #fa709a;">
+          <div class="quiz-type-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#fa709a" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <line x1="12" y1="16" x2="12" y2="12"></line>
+              <line x1="12" y1="8" x2="12.01" y2="8"></line>
+            </svg>
+            <h3>AI Generated Quizzes</h3>
+          </div>
+          <div class="quiz-type-stats">
+            <div class="stat-item">
+              <span class="label">ATTEMPTS</span>
+              <span class="value">{{ performanceData?.aiQuizAttempts || 0 }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="label">AVG SCORE</span>
+              <span class="value">{{ performanceData?.aiQuizAverage || 0 }}%</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Time Spent -->
+        <div class="quiz-type-card" style="background: linear-gradient(135deg, rgba(67, 233, 123, 0.1) 0%, rgba(56, 249, 215, 0.1) 100%); border-left: 4px solid #43e97b;">
+          <div class="quiz-type-header">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#43e97b" stroke-width="2">
+              <circle cx="12" cy="12" r="10"></circle>
+              <polyline points="12 6 12 12 16 14"></polyline>
+            </svg>
+            <h3>Time Spent</h3>
+          </div>
+          <div class="quiz-type-stats">
+            <div class="stat-item">
+              <span class="label">TOTAL</span>
+              <span class="value">{{ formatTime(performanceData?.totalTimeSpent || 0) }}</span>
+            </div>
+          </div>
         </div>
       </div>
     </div>

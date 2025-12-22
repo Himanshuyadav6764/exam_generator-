@@ -123,9 +123,28 @@
                             </div>
                         </div>
 
-                        <div class="recommended-footer" (click)="viewRecommendedCourse(course.id)">
-                            <button class="view-course-btn">
-                                View Course →
+                        <div class="recommended-footer">
+                            <button class="details-btn-small" (click)="showCourseDetails($event, course)">
+                                <i class="fas fa-info-circle"></i> Details
+                            </button>
+                            <button 
+                                *ngIf="!isEnrolledIn(course.id)" 
+                                class="enroll-btn-small" 
+                                (click)="enrollNow($event, course)">
+                                <i class="fas fa-lock"></i> Enroll Now
+                            </button>
+                            <button 
+                                *ngIf="isEnrolledIn(course.id)" 
+                                class="enrolled-btn-small" 
+                                (click)="unenrollCourse($event, course)">
+                                <i class="fas fa-unlock"></i> Enrolled
+                            </button>
+                            <button 
+                                class="view-course-btn-small" 
+                                [disabled]="!isEnrolledIn(course.id)"
+                                [class.disabled]="!isEnrolledIn(course.id)"
+                                (click)="viewRecommendedCourse(course.id)">
+                                <i class="fas fa-play-circle"></i> View Course
                             </button>
                         </div>
                     </div>
@@ -151,6 +170,122 @@
                     </button>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Course Details Modal -->
+<div class="modal-overlay" *ngIf="showModal" (click)="closeModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+        <button class="modal-close" (click)="closeModal()">
+            <i class="fas fa-times"></i>
+        </button>
+        
+        <div class="modal-header">
+            <h2>{{ courseDetails?.title || selectedCourse?.title }}</h2>
+            <p class="instructor-name">
+                <i class="fas fa-user-tie"></i> {{ courseDetails?.instructorName || selectedCourse?.instructorName }}
+            </p>
+            <p class="course-description" *ngIf="courseDetails?.description">
+                {{ courseDetails?.description }}
+            </p>
+            
+            <!-- Course Subjects -->
+            <div class="course-subjects-modal" *ngIf="courseDetails?.subjects && courseDetails.subjects.length > 0">
+                <span class="subject-tag-modal" *ngFor="let subject of courseDetails.subjects">
+                    {{ subject }}
+                </span>
+            </div>
+            
+            <div class="difficulty-badge-modal" [ngClass]="'difficulty-' + (courseDetails?.difficulty || selectedCourse?.difficulty || 'beginner')?.toLowerCase()">
+                {{ courseDetails?.difficulty || selectedCourse?.difficulty || 'BEGINNER' }}
+            </div>
+        </div>
+
+        <div class="modal-body">
+            <!-- Course Stats -->
+            <div class="course-stats-grid">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #667eea;">
+                        <i class="fas fa-layer-group"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.topicCount || 0 }}</div>
+                        <div class="stat-label">Topics</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #f093fb;">
+                        <i class="fas fa-book-open"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.subtopicCount || 0 }}</div>
+                        <div class="stat-label">Subtopics</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #4cc9f0;">
+                        <i class="fas fa-video"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.videoCount || 0 }}</div>
+                        <div class="stat-label">Videos</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #ff6b6b;">
+                        <i class="fas fa-file-pdf"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.pdfCount || 0 }}</div>
+                        <div class="stat-label">PDFs</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #51cf66;">
+                        <i class="fas fa-question-circle"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.mcqCount || 0 }}</div>
+                        <div class="stat-label">MCQs</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background: #845ef7;">
+                        <i class="fas fa-robot"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="stat-value">{{ courseDetails?.aiQuizCount || 0 }}</div>
+                        <div class="stat-label">AI Quizzes</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Topics Breakdown -->
+            <div class="topics-section" *ngIf="courseDetails?.topics && courseDetails.topics.length > 0">
+                <h3><i class="fas fa-list"></i> Topics Breakdown</h3>
+                <div class="topics-list">
+                    <div class="topic-item" *ngFor="let topic of courseDetails.topics">
+                        <div class="topic-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <div class="topic-name">{{ topic.name || topic }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button class="modal-btn btn-close" (click)="closeModal()">
+                <i class="fas fa-times"></i> Close
+            </button>
+            <button 
+                class="modal-btn btn-start"
+                [disabled]="!isEnrolledIn(selectedCourse?.id)"
+                [class.disabled]="!isEnrolledIn(selectedCourse?.id)"
+                (click)="startLearning()">
+                <i class="fas fa-play-circle"></i> Start Learning
+            </button>
         </div>
     </div>
 </div>

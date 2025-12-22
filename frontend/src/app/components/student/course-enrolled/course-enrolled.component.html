@@ -103,7 +103,7 @@
         </div>
         <div class="stat-content">
           <h3 class="stat-label">AI QUIZZES</h3>
-          <p class="stat-value">{{ aiQuizAttempts }}</p>
+          <p class="stat-value">{{ getAIQuizzesCount() }}</p>
         </div>
       </div>
 
@@ -156,12 +156,16 @@
           </h3>
           <div class="breakdown-stats">
             <div class="breakdown-stat">
-              <span class="stat-label">Attempts</span>
+              <span class="stat-label">ATTEMPTS</span>
               <span class="stat-value">{{ normalQuizAttempts }}</span>
             </div>
             <div class="breakdown-stat">
-              <span class="stat-label">Avg Score</span>
+              <span class="stat-label">AVG SCORE</span>
               <span class="stat-value">{{ normalQuizAvgScore }}%</span>
+            </div>
+            <div class="breakdown-stat">
+              <span class="stat-label">LOW SCORE</span>
+              <span class="stat-value">{{ normalQuizLowScore }}%</span>
             </div>
           </div>
         </div>
@@ -173,12 +177,16 @@
           </h3>
           <div class="breakdown-stats">
             <div class="breakdown-stat">
-              <span class="stat-label">Attempts</span>
+              <span class="stat-label">ATTEMPTS</span>
               <span class="stat-value">{{ aiQuizAttempts }}</span>
             </div>
             <div class="breakdown-stat">
-              <span class="stat-label">Avg Score</span>
+              <span class="stat-label">AVG SCORE</span>
               <span class="stat-value">{{ aiQuizAvgScore }}%</span>
+            </div>
+            <div class="breakdown-stat">
+              <span class="stat-label">LOW SCORE</span>
+              <span class="stat-value">{{ aiQuizLowScore }}%</span>
             </div>
           </div>
         </div>
@@ -190,7 +198,7 @@
           </h3>
           <div class="breakdown-stats">
             <div class="breakdown-stat">
-              <span class="stat-label">Total</span>
+              <span class="stat-label">TOTAL</span>
               <span class="stat-value">{{ formatTimeSpent(totalTimeSpent) }}</span>
             </div>
           </div>

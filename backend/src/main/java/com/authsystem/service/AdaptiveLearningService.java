@@ -23,10 +23,11 @@ public class AdaptiveLearningService {
     
     /**
      * Record a quiz attempt and update adaptive profile
+     * @param quizId - "AI_QUIZ" for AI-generated quizzes, null or UUID for normal MCQs
      */
     public StudentPerformance recordQuizAttempt(String studentEmail, String courseId, 
                                                 String topicName, int score, int totalQuestions,
-                                                DifficultyLevel difficultyLevel, long timeSpent) {
+                                                DifficultyLevel difficultyLevel, long timeSpent, String quizId) {
         
         // Get or create performance record
         StudentPerformance performance = performanceRepository
@@ -34,8 +35,10 @@ public class AdaptiveLearningService {
             .orElse(new StudentPerformance(studentEmail, courseId));
         
         // Add quiz attempt
+        // Use "AI_QUIZ" for AI-generated quizzes, or generate UUID for normal MCQs
+        String finalQuizId = (quizId != null && !quizId.isEmpty()) ? quizId : UUID.randomUUID().toString();
         QuizAttempt attempt = new QuizAttempt(
-            UUID.randomUUID().toString(),
+            finalQuizId,
             topicName,
             score,
             totalQuestions,
@@ -279,24 +282,63 @@ public class AdaptiveLearningService {
         // Get all performance records for student
         List<StudentPerformance> allPerformances = performanceRepository.findByStudentEmail(studentEmail);
         
+        System.out.println("📊 Calculating overall progress for: " + studentEmail);
+        System.out.println("   Found " + allPerformances.size() + " performance records");
+        
         if (allPerformances.isEmpty()) {
             overallData.put("totalCourses", 0);
-            overallData.put("totalQuizzes", 0);
+            overallData.put("totalQuizAttempts", 0);
             overallData.put("overallScore", 0.0);
+            overallData.put("averageAccuracy", 0.0);
             overallData.put("totalTimeSpent", 0L);
+            overallData.put("currentLevel", "Beginner");
+            overallData.put("topicsStudied", 0);
+            overallData.put("topicPerformance", new HashMap<>());
+            overallData.put("allQuizAttempts", new ArrayList<>());
             overallData.put("courseProgress", new ArrayList<>());
             return overallData;
         }
         
         // Aggregate data across all courses
         int totalQuizzes = 0;
+        int aiQuizCount = 0;
+        int normalQuizCount = 0;
         long totalTime = 0;
         double totalScore = 0;
+        double totalAccuracy = 0;
+        int accuracyCount = 0;
         List<Map<String, Object>> courseProgressList = new ArrayList<>();
+        List<StudentPerformance.QuizAttempt> allQuizAttempts = new ArrayList<>();
+        Map<String, Map<String, Object>> topicPerformanceMap = new HashMap<>();
+        Set<String> allTopics = new HashSet<>();
+        
+        // Determine current level based on highest difficulty achieved
+        DifficultyLevel highestLevel = DifficultyLevel.BEGINNER;
         
         for (StudentPerformance perf : allPerformances) {
-            totalQuizzes += perf.getQuizAttempts().size();
+            // Collect all quiz attempts
+            List<StudentPerformance.QuizAttempt> courseQuizzes = perf.getQuizAttempts();
+            allQuizAttempts.addAll(courseQuizzes);
+            totalQuizzes += courseQuizzes.size();
+            
+            // Count AI vs Normal quizzes
+            for (StudentPerformance.QuizAttempt attempt : courseQuizzes) {
+                if ("ai".equalsIgnoreCase(attempt.getQuizType())) {
+                    aiQuizCount++;
+                } else {
+                    normalQuizCount++;
+                }
+            }
+            
+            System.out.println("   Course " + perf.getCourseId() + ": " + courseQuizzes.size() + " quiz attempts");
+            
+            // Calculate time spent
             totalTime += perf.getTimeSpentPerTopic().values().stream().mapToLong(Long::longValue).sum();
+            
+            // Track highest difficulty level
+            if (perf.getCurrentDifficultyLevel().ordinal() > highestLevel.ordinal()) {
+                highestLevel = perf.getCurrentDifficultyLevel();
+            }
             
             // Calculate average score for this course
             if (!perf.getTopicScores().isEmpty()) {
@@ -306,25 +348,78 @@ public class AdaptiveLearningService {
                     .orElse(0.0);
                 totalScore += courseScore;
                 
+                // Process topic scores
+                perf.getTopicScores().forEach((topic, score) -> {
+                    allTopics.add(topic);
+                    if (!topicPerformanceMap.containsKey(topic)) {
+                        Map<String, Object> topicData = new HashMap<>();
+                        topicData.put("averageScore", 0.0);
+                        topicData.put("attempts", 0);
+                        topicData.put("totalScore", 0.0);
+                        topicPerformanceMap.put(topic, topicData);
+                    }
+                    
+                    Map<String, Object> topicData = topicPerformanceMap.get(topic);
+                    int attempts = (int) topicData.get("attempts") + 1;
+                    double totalTopicScore = (double) topicData.get("totalScore") + score;
+                    topicData.put("attempts", attempts);
+                    topicData.put("totalScore", totalTopicScore);
+                    topicData.put("averageScore", totalTopicScore / attempts);
+                });
+                
+                // Calculate accuracy from quiz attempts
+                for (StudentPerformance.QuizAttempt attempt : perf.getQuizAttempts()) {
+                    double accuracy = (attempt.getScore() * 100.0) / attempt.getTotalQuestions();
+                    totalAccuracy += accuracy;
+                    accuracyCount++;
+                }
+                
                 // Add course-specific progress
                 Map<String, Object> courseData = new HashMap<>();
                 courseData.put("courseId", perf.getCourseId());
                 courseData.put("score", Math.round(courseScore * 100.0) / 100.0);
                 courseData.put("quizzes", perf.getQuizAttempts().size());
-                courseData.put("difficulty", perf.getCurrentDifficultyLevel());
+                courseData.put("difficulty", perf.getCurrentDifficultyLevel().toString());
                 courseData.put("topics", perf.getTopicScores().keySet());
-                courseData.put("topicScores", perf.getTopicScores()); // Add actual topic scores
-                courseData.put("quizAttempts", perf.getQuizAttempts()); // Add quiz attempts for history
+                courseData.put("topicScores", perf.getTopicScores());
+                courseData.put("quizAttempts", perf.getQuizAttempts());
                 courseProgressList.add(courseData);
             }
         }
         
         double avgScore = allPerformances.size() > 0 ? totalScore / allPerformances.size() : 0.0;
+        double avgAccuracy = accuracyCount > 0 ? totalAccuracy / accuracyCount : 0.0;
+        
+        // Convert level to friendly format
+        String currentLevel;
+        if (highestLevel == DifficultyLevel.BEGINNER) {
+            currentLevel = "Beginner";
+        } else if (highestLevel == DifficultyLevel.INTERMEDIATE) {
+            currentLevel = "Intermediate";
+        } else if (highestLevel == DifficultyLevel.ADVANCED) {
+            currentLevel = "Advanced";
+        } else {
+            currentLevel = "Beginner";
+        }
+        
+        System.out.println("📈 Overall Statistics:");
+        System.out.println("   Total Quiz Attempts: " + totalQuizzes + " (AI: " + aiQuizCount + ", Normal: " + normalQuizCount + ")");
+        System.out.println("   Overall Score: " + avgScore);
+        System.out.println("   Average Accuracy: " + avgAccuracy);
+        System.out.println("   Topics Studied: " + allTopics.size());
+        System.out.println("   Current Level: " + currentLevel);
         
         overallData.put("totalCourses", allPerformances.size());
-        overallData.put("totalQuizzes", totalQuizzes);
+        overallData.put("totalQuizAttempts", totalQuizzes);
+        overallData.put("aiQuizCount", aiQuizCount);
+        overallData.put("normalQuizCount", normalQuizCount);
         overallData.put("overallScore", Math.round(avgScore * 100.0) / 100.0);
+        overallData.put("averageAccuracy", Math.round(avgAccuracy * 100.0) / 100.0);
         overallData.put("totalTimeSpent", totalTime);
+        overallData.put("currentLevel", currentLevel);
+        overallData.put("topicsStudied", allTopics.size());
+        overallData.put("topicPerformance", topicPerformanceMap);
+        overallData.put("allQuizAttempts", allQuizAttempts);
         overallData.put("courseProgress", courseProgressList);
         
         return overallData;

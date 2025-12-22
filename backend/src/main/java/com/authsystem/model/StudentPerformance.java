@@ -53,8 +53,11 @@ public class StudentPerformance {
         private DifficultyLevel difficultyLevel;
         private long timeSpent; // in seconds
         private LocalDateTime attemptDate;
+        private String quizType; // "normal" or "ai"
         
-        public QuizAttempt() {}
+        public QuizAttempt() {
+            this.quizType = "normal";
+        }
         
         public QuizAttempt(String quizId, String topicName, int score, int totalQuestions, 
                           DifficultyLevel difficultyLevel, long timeSpent) {
@@ -65,6 +68,7 @@ public class StudentPerformance {
             this.difficultyLevel = difficultyLevel;
             this.timeSpent = timeSpent;
             this.attemptDate = LocalDateTime.now();
+            this.quizType = "normal";
         }
         
         public double getPercentage() {
@@ -92,6 +96,9 @@ public class StudentPerformance {
         
         public LocalDateTime getAttemptDate() { return attemptDate; }
         public void setAttemptDate(LocalDateTime attemptDate) { this.attemptDate = attemptDate; }
+        
+        public String getQuizType() { return quizType; }
+        public void setQuizType(String quizType) { this.quizType = quizType; }
     }
     
     // Constructors

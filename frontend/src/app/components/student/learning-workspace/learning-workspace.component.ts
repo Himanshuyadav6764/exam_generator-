@@ -3,6 +3,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MCQService, MCQ } from '../../../services/mcq.service';
 import { StudentProgressService } from '../../../services/student-progress.service';
+import { AdaptiveLearningService } from '../../../services/adaptive-learning.service';
 import { AuthService } from '../../../services/auth.service';
 
 @Component({
@@ -57,6 +58,7 @@ export class LearningWorkspaceComponent implements OnInit, OnDestroy {
     public sanitizer: DomSanitizer,
     private mcqService: MCQService,
     private progressService: StudentProgressService,
+    private adaptiveService: AdaptiveLearningService,
     private authService: AuthService
   ) {}
 
@@ -428,8 +430,30 @@ export class LearningWorkspaceComponent implements OnInit, OnDestroy {
       const now = new Date();
       const seconds = Math.floor((now.getTime() - this.quizStartTime.getTime()) / 1000);
       
-      // Record quiz attempt
+      // Record quiz attempt in BOTH systems for backward compatibility
       if (this.studentEmail && this.courseId) {
+        // 1. Record in adaptive learning system (NEW - with separate MCQ tracking)
+        const adaptiveRequest = {
+          studentEmail: this.studentEmail,
+          courseId: this.courseId,
+          topicName: this.topicName,
+          score: this.quizScore,
+          totalQuestions: this.mcqQuestions.length,
+          difficulty: 'INTERMEDIATE',
+          timeSpent: seconds
+          // quizId is undefined/null for normal MCQs (not AI_QUIZ)
+        };
+        
+        this.adaptiveService.recordQuizAttempt(adaptiveRequest).subscribe({
+          next: (response) => {
+            console.log('✅ MCQ Quiz tracked in adaptive system:', response);
+            console.log('  - Current Difficulty:', response.currentDifficulty);
+            console.log('  - Recommended Topic:', response.recommendation?.topic);
+          },
+          error: (err) => console.error('❌ Failed to track MCQ in adaptive system:', err)
+        });
+        
+        // 2. Record in old progress system (for backward compatibility)
         this.progressService.recordQuizAttempt(
           this.studentEmail,
           this.courseId,
@@ -440,11 +464,9 @@ export class LearningWorkspaceComponent implements OnInit, OnDestroy {
           'MEDIUM'
         ).subscribe({
           next: (progress) => {
-            console.log('✅ Quiz recorded - Overall Score:', progress.overallScore + '%');
-            console.log('✅ Current Level:', progress.currentLevel);
-            console.log('✅ Quizzes Passed:', progress.quizzesPassed);
+            console.log('✅ Quiz recorded in old system - Overall Score:', progress.overallScore + '%');
           },
-          error: (err) => console.error('Error recording quiz:', err)
+          error: (err) => console.error('Error recording quiz in old system:', err)
         });
       }
       

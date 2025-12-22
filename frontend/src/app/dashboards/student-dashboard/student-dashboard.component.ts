@@ -5,6 +5,8 @@ import { RecommendationService, RecommendationResponse } from '../../services/re
 import { CourseService } from '../../services/course.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RecommendationSyncService } from '../../services/recommendation-sync.service';
+import { AiQuizService } from '../../services/ai-quiz.service';
+import { forkJoin } from 'rxjs';
 
 @Component({
   selector: 'app-student-dashboard',
@@ -17,6 +19,9 @@ export class StudentDashboardComponent implements OnInit {
   recommendations: RecommendationResponse | null = null;
   loading = false;
   error: string | null = null;
+  
+  // Math object for template
+  Math = Math;
   
   // Courses
   availableCourses: any[] = [];
@@ -33,13 +38,29 @@ export class StudentDashboardComponent implements OnInit {
   showDetailsModal = false;
   selectedCourseId: string = '';
 
+  // Performance Tracking
+  overallPerformance: any = {
+    overallScore: 100,
+    timeSpent: 0,
+    quizzesCount: 0,
+    aiQuizzesCount: 0,
+    currentLevel: 'BEGINNER',
+    aiQuizAverage: 0,
+    normalQuizAverage: 0,
+    totalAttempts: 0,
+    completionStatus: 100
+  };
+  enrolledCourses: any[] = [];
+  loadingPerformance = false;
+
   constructor(
     private authService: AuthService,
     private recommendationService: RecommendationService,
     private courseService: CourseService,
     private http: HttpClient,
     private router: Router,
-    private recommendationSync: RecommendationSyncService
+    private recommendationSync: RecommendationSyncService,
+    private aiQuizService: AiQuizService
   ) {}
 
   ngOnInit(): void {
@@ -50,6 +71,7 @@ export class StudentDashboardComponent implements OnInit {
       this.loadRecommendations();
       this.loadCourses();
       this.loadCourseRecommendations();
+      this.loadEnrolledCourses();
     }
   }
 
@@ -125,6 +147,15 @@ export class StudentDashboardComponent implements OnInit {
         this.loadingRecommendations = false;
       }
     });
+  }
+
+  isEnrolledIn(courseId: string): boolean {
+    return this.enrolledCourses.some(ec => ec.id === courseId);
+  }
+
+  enrollNow(event: Event, courseId: string): void {
+    event.stopPropagation();
+    this.enrollInCourse(courseId);
   }
   
   viewRecommendedCourse(courseId: string): void {
@@ -384,5 +415,118 @@ export class StudentDashboardComponent implements OnInit {
   clearFilter(): void {
     this.selectedCategory = '';
     this.availableCourses = this.allCourses;
+  }
+
+  // Load enrolled courses and calculate performance
+  loadEnrolledCourses(): void {
+    this.loadingPerformance = true;
+    const token = localStorage.getItem('token');
+    const headers = new HttpHeaders({
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    });
+
+    // Get student progress for all courses
+    this.http.get<any[]>(`http://localhost:8081/api/progress/student/${this.email}`, { headers })
+      .subscribe({
+        next: (progressData) => {
+          console.log('📊 Student Progress Data:', progressData);
+          this.calculateOverallPerformanceFromProgress(progressData);
+        },
+        error: (err) => {
+          console.error('Error loading student progress:', err);
+          this.loadingPerformance = false;
+        }
+      });
+  }
+
+  calculateOverallPerformanceFromProgress(progressData: any[]): void {
+    if (!progressData || progressData.length === 0) {
+      this.loadingPerformance = false;
+      console.log('⚠️ No progress data found');
+      return;
+    }
+
+    let totalScore = 0;
+    let totalTimeMinutes = 0;
+    let totalQuizzes = 0;
+    let totalAIQuizzes = 0;
+    let normalQuizScore = 0;
+    let aiQuizScore = 0;
+    let normalQuizCount = 0;
+    let aiQuizCount = 0;
+    let totalAttempts = 0;
+    let completionSum = 0;
+
+    progressData.forEach((progress: any) => {
+      console.log('📈 Course Progress:', progress);
+      
+      // Get overall performance data
+      if (progress.overallPerformance) {
+        const overall = progress.overallPerformance;
+        totalQuizzes += overall.totalQuizzes || 0;
+        totalScore += overall.averageScore || 0;
+        totalTimeMinutes += (overall.totalTimeSpent || 0) / 60; // Convert seconds to minutes
+        totalAttempts += overall.totalQuizzes || 0;
+      }
+
+      // Get quiz attempts data
+      if (progress.quizAttempts && progress.quizAttempts.length > 0) {
+        progress.quizAttempts.forEach((attempt: any) => {
+          if (attempt.quizType === 'ai' || attempt.quizType === 'AI') {
+            aiQuizCount++;
+            aiQuizScore += attempt.score || 0;
+          } else {
+            normalQuizCount++;
+            normalQuizScore += attempt.score || 0;
+          }
+        });
+      }
+
+      // Calculate completion
+      completionSum += progress.completionPercentage || 0;
+    });
+
+    const courseCount = progressData.length;
+
+    this.overallPerformance = {
+      overallScore: courseCount > 0 ? Math.round(totalScore / courseCount) : 0,
+      timeSpent: Math.round(totalTimeMinutes * 60), // Store as seconds
+      quizzesCount: normalQuizCount,
+      aiQuizzesCount: aiQuizCount,
+      totalAttempts: totalAttempts,
+      currentLevel: this.determineLevel(courseCount > 0 ? totalScore / courseCount : 0),
+      normalQuizAverage: normalQuizCount > 0 ? Math.round(normalQuizScore / normalQuizCount) : 0,
+      aiQuizAverage: aiQuizCount > 0 ? Math.round(aiQuizScore / aiQuizCount) : 0,
+      completionStatus: courseCount > 0 ? Math.round(completionSum / courseCount) : 0
+    };
+
+    this.enrolledCourses = progressData;
+    this.loadingPerformance = false;
+    console.log('✅ Final Overall Performance:', this.overallPerformance);
+  }
+
+  determineLevel(avgScore: number): string {
+    if (avgScore >= 90) return 'ADVANCED';
+    if (avgScore >= 70) return 'INTERMEDIATE';
+    return 'BEGINNER';
+  }
+
+  formatTime(seconds: number): string {
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes}m`;
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+    return `${hours}h ${remainingMinutes}m`;
+  }
+
+  getLevelColor(level: string): string {
+    switch(level) {
+      case 'ADVANCED': return '#10b981';
+      case 'INTERMEDIATE': return '#f59e0b';
+      case 'BEGINNER': return '#6366f1';
+      default: return '#6366f1';
+    }
   }
 }

@@ -10,6 +10,7 @@ export interface QuizAttemptRequest {
   totalQuestions: number;
   difficulty: string;
   timeSpent: number;
+  quizId?: string; // Optional: "AI_QUIZ" for AI-generated quizzes
 }
 
 export interface CompletionUpdateRequest {

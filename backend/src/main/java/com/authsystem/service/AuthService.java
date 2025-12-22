@@ -18,19 +18,38 @@ public class AuthService {
     private PasswordEncoder passwordEncoder;
 
     public User register(User user) throws Exception {
-        if (userRepository.existsByEmail(user.getEmail())) {
+        // Normalize email to lowercase
+        String normalizedEmail = user.getEmail().toLowerCase().trim();
+        
+        if (userRepository.existsByEmail(normalizedEmail)) {
             throw new Exception("Email already exists");
         }
         
+        user.setEmail(normalizedEmail);
         user.setPassword(passwordEncoder.encode(user.getPassword()));
         return userRepository.save(user);
     }
 
     public Optional<User> authenticate(String email, String password) {
-        Optional<User> user = userRepository.findByEmail(email);
+        // Convert email to lowercase for case-insensitive matching
+        String normalizedEmail = email.toLowerCase().trim();
+        Optional<User> user = userRepository.findByEmail(normalizedEmail);
         
-        if (user.isPresent() && passwordEncoder.matches(password, user.get().getPassword())) {
-            return user;
+        if (!user.isPresent()) {
+            // Try original email if normalized didn't work
+            user = userRepository.findByEmail(email);
+        }
+        
+        if (user.isPresent()) {
+            System.out.println("👤 User found: " + user.get().getEmail());
+            if (passwordEncoder.matches(password, user.get().getPassword())) {
+                System.out.println("✅ Password match successful");
+                return user;
+            } else {
+                System.out.println("❌ Password mismatch");
+            }
+        } else {
+            System.out.println("❌ User not found with email: " + email);
         }
         
         return Optional.empty();

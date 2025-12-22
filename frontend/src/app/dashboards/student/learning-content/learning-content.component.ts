@@ -445,11 +445,13 @@ export class LearningContentComponent implements OnInit, OnDestroy {
       score: correctCount,
       totalQuestions: this.mcqQuestions.length,
       timeSpentSeconds: timeSpentSeconds,
-      difficulty: 'MEDIUM'
+      difficulty: 'MEDIUM',
+      quizType: 'normal'  // Track as normal quiz
     };
     
     this.courseService.trackQuizAttempt(payload).subscribe({
       next: (response) => {
+        console.log('✅ Quiz attempt tracked:', response);
       },
       error: (error) => {
         console.error('Error tracking quiz attempt:', error);

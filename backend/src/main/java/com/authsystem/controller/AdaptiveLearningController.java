@@ -38,11 +38,12 @@ public class AdaptiveLearningController {
             int totalQuestions = (Integer) request.get("totalQuestions");
             String difficultyStr = (String) request.getOrDefault("difficulty", "BEGINNER");
             long timeSpent = ((Number) request.getOrDefault("timeSpent", 0)).longValue();
+            String quizId = (String) request.get("quizId"); // null for normal MCQ, "AI_QUIZ" for AI-generated
             
             DifficultyLevel difficulty = DifficultyLevel.fromString(difficultyStr);
             
             StudentPerformance performance = adaptiveService.recordQuizAttempt(
-                studentEmail, courseId, topicName, score, totalQuestions, difficulty, timeSpent
+                studentEmail, courseId, topicName, score, totalQuestions, difficulty, timeSpent, quizId
             );
             
             return ResponseEntity.ok(Map.of(
@@ -107,30 +108,66 @@ public class AdaptiveLearningController {
             if (performance.isPresent()) {
                 StudentPerformance perf = performance.get();
                 
-                // Calculate derived metrics
-                double avgScore = perf.getTopicScores().values().stream()
+                // Get all quiz attempts
+                List<StudentPerformance.QuizAttempt> allAttempts = perf.getQuizAttempts();
+                
+                // Separate AI quiz and MCQ attempts
+                long aiQuizCount = allAttempts.stream()
+                    .filter(a -> "AI_QUIZ".equals(a.getQuizId()) || a.getTopicName().contains("AI Quiz"))
+                    .count();
+                
+                long mcqCount = allAttempts.stream()
+                    .filter(a -> !"AI_QUIZ".equals(a.getQuizId()) && !a.getTopicName().contains("AI Quiz"))
+                    .count();
+                
+                // Calculate AI quiz average
+                double aiQuizAvg = allAttempts.stream()
+                    .filter(a -> "AI_QUIZ".equals(a.getQuizId()) || a.getTopicName().contains("AI Quiz"))
+                    .mapToDouble(StudentPerformance.QuizAttempt::getPercentage)
+                    .average()
+                    .orElse(0.0);
+                
+                // Calculate MCQ average
+                double mcqAvg = allAttempts.stream()
+                    .filter(a -> !"AI_QUIZ".equals(a.getQuizId()) && !a.getTopicName().contains("AI Quiz"))
+                    .mapToDouble(StudentPerformance.QuizAttempt::getPercentage)
+                    .average()
+                    .orElse(0.0);
+                
+                // Calculate overall average from topic scores
+                double overallScore = perf.getTopicScores().values().stream()
                     .mapToInt(Integer::intValue)
                     .average()
                     .orElse(0.0);
                 
-                long totalTime = perf.getTimeSpentPerTopic().values().stream()
+                // Calculate total time spent (seconds)
+                long totalTimeSeconds = perf.getTimeSpentPerTopic().values().stream()
                     .mapToLong(Long::longValue)
                     .sum();
                 
-                // Convert time from seconds to minutes
-                long totalTimeMinutes = totalTime / 60;
+                // Calculate completion percentage
+                double avgCompletion = perf.getCompletionPercentage().values().stream()
+                    .mapToDouble(Double::doubleValue)
+                    .average()
+                    .orElse(0.0);
                 
                 // Build enhanced response
                 Map<String, Object> enhancedPerf = new HashMap<>();
                 enhancedPerf.put("id", perf.getId());
                 enhancedPerf.put("studentEmail", perf.getStudentEmail());
                 enhancedPerf.put("courseId", perf.getCourseId());
-                enhancedPerf.put("quizAttempts", perf.getQuizAttempts());
+                enhancedPerf.put("quizAttempts", allAttempts);
+                enhancedPerf.put("totalAttempts", allAttempts.size());
+                enhancedPerf.put("aiQuizAttempts", aiQuizCount);
+                enhancedPerf.put("mcqAttempts", mcqCount);
+                enhancedPerf.put("aiQuizAverage", Math.round(aiQuizAvg * 100.0) / 100.0);
+                enhancedPerf.put("mcqAverage", Math.round(mcqAvg * 100.0) / 100.0);
                 enhancedPerf.put("topicScores", perf.getTopicScores());
                 enhancedPerf.put("completionPercentage", perf.getCompletionPercentage());
-                enhancedPerf.put("currentDifficultyLevel", perf.getCurrentDifficultyLevel());
-                enhancedPerf.put("overallScore", Math.round(avgScore * 100.0) / 100.0);
-                enhancedPerf.put("totalTimeSpent", totalTimeMinutes);
+                enhancedPerf.put("avgCompletion", Math.round(avgCompletion * 100.0) / 100.0);
+                enhancedPerf.put("currentDifficultyLevel", perf.getCurrentDifficultyLevel().toString());
+                enhancedPerf.put("overallScore", Math.round(overallScore * 100.0) / 100.0);
+                enhancedPerf.put("totalTimeSpent", totalTimeSeconds);
                 enhancedPerf.put("recommendedTopic", perf.getRecommendedTopic());
                 enhancedPerf.put("recommendedDifficulty", perf.getRecommendedDifficulty());
                 
@@ -144,8 +181,14 @@ public class AdaptiveLearningController {
                 emptyPerf.put("studentEmail", studentEmail);
                 emptyPerf.put("courseId", courseId);
                 emptyPerf.put("quizAttempts", new ArrayList<>());
+                emptyPerf.put("totalAttempts", 0);
+                emptyPerf.put("aiQuizAttempts", 0);
+                emptyPerf.put("mcqAttempts", 0);
+                emptyPerf.put("aiQuizAverage", 0.0);
+                emptyPerf.put("mcqAverage", 0.0);
                 emptyPerf.put("topicScores", new HashMap<>());
                 emptyPerf.put("completionPercentage", new HashMap<>());
+                emptyPerf.put("avgCompletion", 0.0);
                 emptyPerf.put("currentDifficultyLevel", "BEGINNER");
                 emptyPerf.put("overallScore", 0.0);
                 emptyPerf.put("totalTimeSpent", 0L);
@@ -216,7 +259,9 @@ public class AdaptiveLearningController {
     @GetMapping("/overall-progress")
     public ResponseEntity<?> getOverallProgressAllCourses(@RequestParam String studentEmail) {
         try {
+            System.out.println("🎯 GET /overall-progress called for: " + studentEmail);
             Map<String, Object> overallProgress = adaptiveService.calculateOverallProgressAllCourses(studentEmail);
+            System.out.println("✅ Overall progress calculated successfully");
             
             return ResponseEntity.ok(Map.of(
                 "success", true,
@@ -224,6 +269,8 @@ public class AdaptiveLearningController {
             ));
             
         } catch (Exception e) {
+            System.out.println("❌ Error calculating overall progress: " + e.getMessage());
+            e.printStackTrace();
             return ResponseEntity.badRequest().body(Map.of(
                 "success", false,
                 "error", "Failed to calculate overall progress: " + e.getMessage()
