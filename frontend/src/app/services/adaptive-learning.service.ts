@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface QuizAttemptRequest {
   studentEmail: string;
@@ -56,7 +57,7 @@ export interface QuizAttempt {
 })
 export class AdaptiveLearningService {
   
-  private apiUrl = 'http://localhost:8081/api/adaptive';
+  private apiUrl = `${environment.apiUrl}/adaptive`;
 
   constructor(private http: HttpClient) {}
 

@@ -35,7 +35,7 @@ export interface UploadProgress {
   providedIn: 'root'
 })
 export class CloudStorageService {
-  private apiUrl = 'http://localhost:8081/api/files';
+  private apiUrl = `${environment.apiUrl}/files`;
 
   constructor(private http: HttpClient) { }
 

@@ -95,38 +95,38 @@ export class CourseService {
   }
 
   getMcqByCourseTopic(courseId: string, topicName: string): Observable<any[]> {
-    return this.http.get<any[]>(`http://localhost:8081/api/mcq/course/${courseId}/topic/${topicName}`, { 
+    return this.http.get<any[]>(`${environment.apiUrl}/mcq/course/${courseId}/topic/${topicName}`, { 
       headers: this.getHeaders() 
     });
   }
 
   // Progress tracking methods
   trackVideoWatch(payload: any): Observable<any> {
-    return this.http.post('http://localhost:8081/api/progress/video-watch', payload, { 
+    return this.http.post(`${environment.apiUrl}/progress/video-watch`, payload, { 
       headers: this.getHeaders() 
     });
   }
 
   trackPdfView(payload: any): Observable<any> {
-    return this.http.post('http://localhost:8081/api/progress/pdf-view', payload, { 
+    return this.http.post(`${environment.apiUrl}/progress/pdf-view`, payload, { 
       headers: this.getHeaders() 
     });
   }
 
   saveSubtopicProgress(payload: any): Observable<any> {
-    return this.http.post('http://localhost:8081/api/progress/subcontent-complete', payload, { 
+    return this.http.post(`${environment.apiUrl}/progress/subcontent-complete`, payload, { 
       headers: this.getHeaders() 
     });
   }
 
   trackQuizAttempt(payload: any): Observable<any> {
-    return this.http.post('http://localhost:8081/api/progress/quiz-attempt', payload, { 
+    return this.http.post(`${environment.apiUrl}/progress/quiz-attempt`, payload, { 
       headers: this.getHeaders() 
     });
   }
 
   getStudentProgress(email: string): Observable<any[]> {
-    return this.http.get<any[]>(`http://localhost:8081/api/progress/student/${email}`, { 
+    return this.http.get<any[]>(`${environment.apiUrl}/progress/student/${email}`, { 
       headers: this.getHeaders() 
     });
   }

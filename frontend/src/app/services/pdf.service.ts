@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface PDF {
   id?: string;
@@ -28,7 +29,7 @@ export interface PDFStats {
   providedIn: 'root'
 })
 export class PDFService {
-  private apiUrl = 'http://localhost:8081/api/pdfs';
+  private apiUrl = `${environment.apiUrl}/pdfs`;
 
   constructor(private http: HttpClient) {}
 

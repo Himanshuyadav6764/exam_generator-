@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Subject {
   id?: string;
@@ -26,7 +27,7 @@ export interface SubjectStats {
   providedIn: 'root'
 })
 export class SubjectService {
-  private apiUrl = 'http://localhost:8081/api/subjects';
+  private apiUrl = `${environment.apiUrl}/subjects`;
 
   constructor(private http: HttpClient) {}
 

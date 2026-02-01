@@ -130,7 +130,7 @@ export interface DifficultyStats {
   providedIn: 'root'
 })
 export class ContentService {
-  private apiUrl = 'http://localhost:8081/api/content';
+  private apiUrl = `${environment.apiUrl}/content`;
 
   constructor(private http: HttpClient) {}
 

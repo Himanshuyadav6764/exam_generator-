@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface QuizQuestion {
   id: string;
@@ -41,7 +42,7 @@ export interface GeneratedQuiz {
 })
 export class AiQuizService {
   // Use the main Spring Boot API (port 8081) with the correct ai-quiz path
-  private apiUrl = 'http://localhost:8081/api/ai-quiz';
+  private apiUrl = `${environment.apiUrl}/ai-quiz`;
 
   constructor(private http: HttpClient) {}
 

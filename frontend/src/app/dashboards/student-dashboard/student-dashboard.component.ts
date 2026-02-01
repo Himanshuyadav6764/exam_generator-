@@ -7,6 +7,7 @@ import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RecommendationSyncService } from '../../services/recommendation-sync.service';
 import { AiQuizService } from '../../services/ai-quiz.service';
 import { forkJoin } from 'rxjs';
+import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-student-dashboard',
@@ -134,7 +135,7 @@ export class StudentDashboardComponent implements OnInit {
     });
     
     this.http.get<any>(
-      `http://localhost:8081/api/student/${this.email}/recommendations`,
+      `${environment.apiUrl}/student/${this.email}/recommendations`,
       { headers }
     ).subscribe({
       next: (response) => {
@@ -190,7 +191,7 @@ export class StudentDashboardComponent implements OnInit {
     });
 
     this.http.post(
-      `http://localhost:8081/api/student/${this.email}/recommendations/add`,
+      `${environment.apiUrl}/student/${this.email}/recommendations/add`,
       { courseId },
       { headers }
     ).subscribe({
@@ -427,7 +428,7 @@ export class StudentDashboardComponent implements OnInit {
     });
 
     // Get student progress for all courses
-    this.http.get<any[]>(`http://localhost:8081/api/progress/student/${this.email}`, { headers })
+    this.http.get<any[]>(`${environment.apiUrl}/progress/student/${this.email}`, { headers })
       .subscribe({
         next: (progressData) => {
           console.log('📊 Student Progress Data:', progressData);

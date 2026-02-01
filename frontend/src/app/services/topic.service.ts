@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface Topic {
   id?: string;
@@ -24,7 +25,7 @@ export interface BulkTopicRequest {
   providedIn: 'root'
 })
 export class TopicService {
-  private apiUrl = 'http://localhost:8081/api/topics';
+  private apiUrl = `${environment.apiUrl}/topics`;
 
   constructor(private http: HttpClient) {}
 

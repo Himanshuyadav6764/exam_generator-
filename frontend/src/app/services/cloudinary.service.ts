@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class CloudinaryService {
-  private baseUrl = 'http://localhost:8081/api';
+  private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient) { }
 

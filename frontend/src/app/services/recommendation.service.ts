@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 export interface ContentRecommendation {
   topicId: string;
@@ -28,8 +29,8 @@ export interface RecommendationResponse {
   providedIn: 'root'
 })
 export class RecommendationService {
-  private apiUrl = 'http://localhost:8081/api/recommendations';
-  private studentApiUrl = 'http://localhost:8081/api/student';
+  private apiUrl = `${environment.apiUrl}/recommendations`;
+  private studentApiUrl = `${environment.apiUrl}/student`;
 
   constructor(private http: HttpClient) { }
 
