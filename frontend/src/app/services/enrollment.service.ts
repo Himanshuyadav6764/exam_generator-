@@ -6,7 +6,7 @@ import { Observable } from 'rxjs';
   providedIn: 'root'
 })
 export class EnrollmentService {
-  private apiUrl = 'http://localhost:8081/api/enrollment';
+  private apiUrl = `${environment.apiUrl}/enrollment`;
 
   constructor(private http: HttpClient) { }
 

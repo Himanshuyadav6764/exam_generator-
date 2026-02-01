@@ -72,7 +72,7 @@ export interface ActivityLog {
   providedIn: 'root'
 })
 export class StudentProgressService {
-  private apiUrl = 'http://localhost:8081/api/progress';
+  private apiUrl = `${environment.apiUrl}/progress`;
   
   // Observable for real-time progress updates
   private progressSubject = new BehaviorSubject<StudentProgress | null>(null);

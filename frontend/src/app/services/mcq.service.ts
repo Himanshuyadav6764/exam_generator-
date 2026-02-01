@@ -44,7 +44,7 @@ export interface MCQValidationResult {
   providedIn: 'root'
 })
 export class MCQService {
-  private apiUrl = 'http://localhost:8081/api/mcqs';
+  private apiUrl = `${environment.apiUrl}/mcqs`;
 
   constructor(private http: HttpClient) {}
 
