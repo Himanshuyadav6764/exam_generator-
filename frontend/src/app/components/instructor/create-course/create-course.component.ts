@@ -40,7 +40,7 @@ export class CreateCourseComponent implements OnInit {
     difficulty: 'BEGINNER',
     thumbnail: '',
     status: 'DRAFT',
-    topics: []
+    topics: [] as any[]
   };
 
   courseId: string | null = null;
