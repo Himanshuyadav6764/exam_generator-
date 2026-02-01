@@ -5,6 +5,9 @@ backend/*.iml
 backend/.classpath
 backend/.project
 backend/.settings/
+backend/mvnw
+backend/mvnw.cmd
+backend/.mvn/
 
 # Frontend Angular
 frontend/node_modules/
@@ -12,8 +15,16 @@ frontend/.angular/
 frontend/dist/
 frontend/.cache/
 frontend/*.log
+frontend/.browserslistrc
 
-# Tools
+# AI Services
+ai-quiz-service/node_modules/
+ai-quiz-service/*.log
+mcq-generator/node_modules/
+mcq-generator/*.log
+mcq-generator/dist/
+
+# Tools (Keep local tools, don't commit)
 tools/
 
 # IDE
@@ -22,18 +33,27 @@ tools/
 *.swp
 *.swo
 *~
+.DS_Store
 
 # OS
 .DS_Store
 Thumbs.db
+desktop.ini
 
 # Logs
 *.log
+logs/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
 
-# Environment Variables
+# Environment Variables (CRITICAL - Never commit!)
 .env
 .env.local
 .env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
 backend/.env
 frontend/.env
 ai-quiz-service/.env
@@ -45,3 +65,27 @@ mcq-generator/.env
 !frontend/.env.example
 !ai-quiz-service/.env.example
 !mcq-generator/.env.example
+
+# Dependencies
+node_modules/
+package-lock.json
+yarn.lock
+
+# Build outputs
+dist/
+build/
+out/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# Test coverage
+coverage/
+.nyc_output/
+
+# Database
+*.db
+*.sqlite
+*.sqlite3
