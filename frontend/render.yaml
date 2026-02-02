@@ -2,7 +2,7 @@ services:
   - type: web
     name: ims-frontend
     env: static
-    buildCommand: npm install && npm run build -- --configuration production
+    buildCommand: npm install && npm run build
     staticPublishPath: dist/auth-frontend/browser
     routes:
       - type: rewrite
