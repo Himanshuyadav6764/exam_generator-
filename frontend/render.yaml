@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: ims-frontend
+    env: static
+    buildCommand: npm install && npm run build -- --configuration production
+    staticPublishPath: dist/auth-frontend/browser
+    routes:
+      - type: rewrite
+        source: /*
+        destination: /index.html
