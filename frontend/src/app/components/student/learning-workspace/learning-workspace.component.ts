@@ -5,6 +5,8 @@ import { MCQService, MCQ } from '../../../services/mcq.service';
 import { StudentProgressService } from '../../../services/student-progress.service';
 import { AdaptiveLearningService } from '../../../services/adaptive-learning.service';
 import { AuthService } from '../../../services/auth.service';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 
 @Component({
   selector: 'app-learning-workspace',
@@ -267,7 +269,7 @@ export class LearningWorkspaceComponent implements OnInit, OnDestroy {
 
     const http = (this.progressService as any).http;
     
-    http.post('http://localhost:8081/api/progress/notes/save', requestBody, { headers })
+    http.post('${environment.apiUrl}/progress/notes/save', requestBody, { headers })
       .subscribe({
         next: (response: any) => {
           console.log('✅ Notes saved successfully:', response);
@@ -295,7 +297,7 @@ export class LearningWorkspaceComponent implements OnInit, OnDestroy {
     const headers = { Authorization: `Bearer ${token}` };
 
     const http = (this.progressService as any).http;
-    const url = `http://localhost:8081/api/progress/notes/${this.studentEmail}/${this.courseId}/${this.topicName}/${this.subtopicName}`;
+    const url = `${environment.apiUrl}/progress/notes/${this.studentEmail}/${this.courseId}/${this.topicName}/${this.subtopicName}`;
 
     http.get(url, { headers }).subscribe({
       next: (response: any) => {

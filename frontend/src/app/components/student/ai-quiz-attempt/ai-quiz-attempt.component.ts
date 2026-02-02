@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { AiQuizService } from '../../../services/ai-quiz.service';
 import { AuthService } from '../../../services/auth.service';
 import { CourseService } from '../../../services/course.service';
@@ -245,7 +246,7 @@ export class AiQuizAttemptComponent implements OnInit {
       return;
     }
 
-    this.http.post('http://localhost:8081/api/progress/quiz-attempt', progressPayload, {
+    this.http.post('${environment.apiUrl}/progress/quiz-attempt', progressPayload, {
       headers: new HttpHeaders({
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json'

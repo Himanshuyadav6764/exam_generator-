@@ -4,6 +4,7 @@ import { AdaptiveLearningService } from '../../../services/adaptive-learning.ser
 import { AuthService } from '../../../services/auth.service';
 import { CourseService } from '../../../services/course.service';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { forkJoin, Subscription } from 'rxjs';
 import { RecommendationSyncService } from '../../../services/recommendation-sync.service';
@@ -166,7 +167,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
       return;
     }
 
-    this.http.get<any[]>(`http://localhost:8081/api/enrollments/student/${this.studentEmail}`, { 
+    this.http.get<any[]>(`${environment.apiUrl}/enrollments/student/${this.studentEmail}`, { 
       headers: this.getHeaders() 
     }).subscribe({
       next: (enrollments) => {
@@ -197,7 +198,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
     forkJoin({
       courses: this.courseService.getPublishedCourses(),
       progress: this.adaptiveService.getAllCoursesProgress(this.studentEmail),
-      enrollments: this.http.get<any[]>(`http://localhost:8081/api/enrollments/student/${this.studentEmail}`, { 
+      enrollments: this.http.get<any[]>(`${environment.apiUrl}/enrollments/student/${this.studentEmail}`, { 
         headers: this.getHeaders() 
       })
     }).subscribe({
@@ -641,7 +642,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.get<any>(`http://localhost:8081/api/student/${email}/recommendations`, { headers })
+    this.http.get<any>(`${environment.apiUrl}/student/${email}/recommendations`, { headers })
       .subscribe({
         next: (response) => {
           // Handle both array response and object with recommendations property
@@ -699,7 +700,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
       'Authorization': `Bearer ${token}`
     });
 
-    this.http.delete(`http://localhost:8081/api/student/${this.studentEmail}/recommendations/${courseId}`, { headers })
+    this.http.delete(`${environment.apiUrl}/student/${this.studentEmail}/recommendations/${courseId}`, { headers })
       .subscribe({
         next: () => {
           // Remove from both arrays
@@ -754,7 +755,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
     console.log('✅ Immediately added to enrolledCourses:', this.enrolledCourses);
 
     // Using courseService to ensure proper headers and auth
-    this.http.post('http://localhost:8081/api/enrollments/enroll', enrollment).subscribe({
+    this.http.post('${environment.apiUrl}/enrollments/enroll', enrollment).subscribe({
       next: (response: any) => {
         console.log('✅ Enrolled successfully:', response);
         
@@ -797,7 +798,7 @@ export class AdaptivePanelComponent implements OnInit, AfterViewInit, OnDestroy 
 
     // Call unenroll API
     this.http.delete(
-      `http://localhost:8081/api/enrollments/unenroll/${this.studentEmail}/${course.id}`, 
+      `${environment.apiUrl}/enrollments/unenroll/${this.studentEmail}/${course.id}`, 
       { headers }
     ).subscribe({
       next: () => {

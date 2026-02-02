@@ -1,5 +1,6 @@
 import { Component, Input, Output, EventEmitter, OnInit, OnChanges, SimpleChanges } from '@angular/core';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../environments/environment';
 
 export interface CourseDetails {
   id: string;
@@ -95,7 +96,7 @@ export class CourseDetailsModalComponent implements OnInit, OnChanges {
       'Content-Type': 'application/json'
     });
     
-    this.http.get<CourseDetails>(`http://localhost:8081/api/courses/${this.courseId}/details`, { headers })
+    this.http.get<CourseDetails>(`${environment.apiUrl}/courses/${this.courseId}/details`, { headers })
       .subscribe({
         next: (data) => {
           this.courseDetails = data;

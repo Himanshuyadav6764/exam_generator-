@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { StudentProgressService, StudentProgress } from '../../../services/student-progress.service';
 import { AuthService } from '../../../services/auth.service';
 import { AiQuizService } from '../../../services/ai-quiz.service';
@@ -105,7 +106,7 @@ export class CourseEnrolledComponent implements OnInit {
       'Content-Type': 'application/json'
     });
 
-    this.http.get<any>(`http://localhost:8081/api/courses/${this.courseId}/details`, { headers })
+    this.http.get<any>(`${environment.apiUrl}/courses/${this.courseId}/details`, { headers })
       .subscribe({
         next: (data) => {
           this.courseDetails = data;

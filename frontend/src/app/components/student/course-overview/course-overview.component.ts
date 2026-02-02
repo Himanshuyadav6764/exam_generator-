@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { environment } from '../../../../environments/environment';
 import { AdaptiveLearningService } from '../../../services/adaptive-learning.service';
 import { AuthService } from '../../../services/auth.service';
 
@@ -87,7 +88,7 @@ export class CourseOverviewComponent implements OnInit {
     });
 
     // Try to load course details from backend
-    this.http.get<any>(`http://localhost:8081/api/courses/${this.courseId}`, { headers })
+    this.http.get<any>(`${environment.apiUrl}/courses/${this.courseId}`, { headers })
       .subscribe({
         next: (data) => {
           this.courseDetails = data;
@@ -96,7 +97,7 @@ export class CourseOverviewComponent implements OnInit {
         error: (err) => {
           console.error('Error loading course details:', err);
           // Try alternate endpoint
-          this.http.get<any>(`http://localhost:8081/api/courses/${this.courseId}/details`, { headers })
+          this.http.get<any>(`${environment.apiUrl}/courses/${this.courseId}/details`, { headers })
             .subscribe({
               next: (data) => {
                 this.courseDetails = data;

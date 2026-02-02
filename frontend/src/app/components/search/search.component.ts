@@ -4,6 +4,7 @@ import { Subject } from 'rxjs';
 import { debounceTime, distinctUntilChanged, switchMap } from 'rxjs/operators';
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { RecommendationSyncService } from '../../services/recommendation-sync.service';
+import { environment } from '../../../environments/environment';
 
 interface SearchResults {
   courses: any[];
@@ -28,7 +29,7 @@ export class SearchComponent implements OnInit {
   hasSearched: boolean = false;
   
   private searchSubject = new Subject<string>();
-  private apiUrl = 'http://localhost:8081/api/courses';
+  private apiUrl = `${environment.apiUrl}/courses`;
 
   constructor(
     private http: HttpClient,
@@ -161,7 +162,7 @@ export class SearchComponent implements OnInit {
     });
 
     this.http.post(
-      `http://localhost:8081/api/student/${userEmail}/recommendations/add`,
+      `${environment.apiUrl}/student/${userEmail}/recommendations/add`,
       { courseId },
       { headers }
     ).subscribe({
@@ -193,7 +194,7 @@ export class SearchComponent implements OnInit {
     });
 
     this.http.post(
-      `http://localhost:8081/api/student/${userEmail}/recommendations/add`,
+      `${environment.apiUrl}/student/${userEmail}/recommendations/add`,
       { courseId },
       { headers }
     ).subscribe({
